@@ -1,0 +1,28 @@
+{
+    "name": "sgenmi/eyaf",
+    "type": "library",
+    "description": "An efficient Yaf framework",
+    "keywords": [
+        "yaf",
+        "eyaf",
+        "framework"
+    ],
+    "authors": [
+        {
+            "name": "史海",
+            "email": "sgenmi@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.1.0",
+        "catfan/medoo": "^1.7"
+    },
+    "autoload": {
+        "psr-4": {
+            "Sgenmi\\eYaf\\": "src/"
+        }
+    },
+    "bin": [
+        "bin/eyaf"
+    ]
+}
