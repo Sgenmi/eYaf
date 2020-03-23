@@ -1,3 +1,12 @@
 #!/usr/bin/env php
 <?php
 
+use Sgenmi\eYaf\Command\Run;
+define("APP_ROOT",realpath(getcwd()));
+require APP_ROOT."/vendor/autoload.php";
+$commandParams=$argv;
+array_shift($commandParams);
+$ret = Run::getInstance()->exec($commandParams);
+if(!empty($ret)){
+    echo $ret."\n";
+}
