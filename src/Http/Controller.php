@@ -20,7 +20,7 @@ class Controller extends \Yaf\Controller_Abstract
         $this->_module = strtolower($this->getRequest()->getModuleName());
         $this->_controller= strtolower($this->getRequest()->getControllerName());
         $this->_action = strtolower($this->getRequest()->getActionName());
-        defined(IS_DISABLE_VIEW) && defined('IS_DISABLE_VIEW',true);
+        !defined('IS_DISABLE_VIEW') && defined('IS_DISABLE_VIEW',true);
         //禁用渲染模板
         if(IS_DISABLE_VIEW){
             \Yaf\Dispatcher::getInstance()->disableView();
