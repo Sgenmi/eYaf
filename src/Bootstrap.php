@@ -9,13 +9,13 @@ namespace Sgenmi\eyaf;
 require dirname(getcwd()).'/vendor/autoload.php';
 class Bootstrap extends \Yaf\Bootstrap_Abstract
 {
-    private $_config;
     //全部设置配置文件
     public function _initBootstrap()
     {
-        $this->_config = \Yaf\Application::app()->getConfig();
-        \Yaf\Registry::set('_config', $this->_config);
+        $config = \Yaf\Application::app()->getConfig();
+        \Yaf\Registry::set('_config', $config);
     }
+
     //关闭错误
     public function _initErrors()
     {
