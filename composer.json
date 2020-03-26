@@ -13,8 +13,10 @@
             "email": "sgenmi@gmail.com"
         }
     ],
+    "minimum-stability": "dev",
     "require": {
         "php": ">=7.1.0",
+        "qingbing/php-yaf-doc": "dev-master",
         "catfan/medoo": "^1.7"
     },
     "autoload": {
@@ -25,4 +27,5 @@
     "bin": [
         "bin/eyaf"
     ]
+
 }
