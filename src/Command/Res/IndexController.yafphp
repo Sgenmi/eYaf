@@ -1,0 +1,19 @@
+<?php
+
+/**
+ * Created by IntelliJ IDEA.
+ * Author: sgenmi
+ * Date: 2020/3/23 下午5:59
+ * Email: 150560159@qq.com
+ */
+
+use Sgenmi\eYaf\Http\Controller;
+
+class Controller_Index extends Controller{
+
+    //方法 xxxAction()
+    public function indexAction(){
+        phpinfo();
+    }
+
+}
