@@ -30,13 +30,7 @@ class Bootstrap extends \Yaf\Bootstrap_Abstract
     // 安全输入
     public function _initFilter()
     {
-//        \Sgenmi\eyaf\Utility\Filter::request();
-        if(isset($_GET['_t'])){
-            unset($_GET['_t']);
-        }
-        if(isset($_POST['_t'])){
-            unset($_POST['_t']);
-        }
+        \Sgenmi\eYaf\Utility\Filter::request();
     }
 
     private function getDBConfig($isMaster = false)
