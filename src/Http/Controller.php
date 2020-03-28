@@ -110,7 +110,7 @@ abstract class Controller extends \Yaf\Controller_Abstract
     /**
      * @param string $name
      * @param string $dafault
-     * @return string
+     * @return mixed
      */
     protected function getPost(string $name = '', $dafault = '')
     {
