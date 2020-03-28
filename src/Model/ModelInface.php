@@ -13,7 +13,7 @@ interface ModelInface
     public function getDb();
 
     // 统一判断用户提交数据,省去重复判断
-    public function check_data($d);
+    public function checkField($data,$field=[]);
 
     public function select($join, $columns = null, $where = null, $is_slave = false);
 

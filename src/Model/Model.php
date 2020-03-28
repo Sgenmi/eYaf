@@ -44,13 +44,21 @@ abstract class Model implements ModelInface
         // $this->db = new Medoo\Medoo();
     }
 
-    public function getDb()
-    {/**/
-        return $this->db;
+    public function checkField($data, $field = [])
+    {
+        if (! $field) {
+            $field = array_keys($data);
+        }
+        $this->check_field = $field;
+        return $this->check_data($data);
     }
 
+    public function getDb()
+    {
+        return $this->db;
+    }
     // 统一判断用户提交数据,省去重复判断
-    public function check_data($d)
+    private function check_data($d)
     {
         $ret = TRUE;
 
