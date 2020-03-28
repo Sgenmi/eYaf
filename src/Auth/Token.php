@@ -10,5 +10,7 @@ namespace Sgenmi\eYaf\Auth;
 
 class Token
 {
+    const USER_TOKEN ='s:u:token:';
+    const USER_ID_SET = 'z:uid:token:';
 
 }
