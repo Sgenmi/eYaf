@@ -41,7 +41,7 @@ class Token
 
     public static function getToken()
     {
-        return (new \Yaf\Request\Http())->get ("HTTP_ACCESS_TOKEN", '');
+        return (new \Yaf\Request\Http())->getServer("HTTP_ACCESS_TOKEN", '');
     }
 
     /**
