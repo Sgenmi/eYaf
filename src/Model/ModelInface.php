@@ -23,8 +23,6 @@ interface ModelInface
 
     public function delete($where);
 
-    public function delete_virtual($where);
-
     public function replace($columns, $where = null);
 
     public function get($join = null, $columns = null, $where = null, $is_slave = false);
