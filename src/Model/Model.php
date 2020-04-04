@@ -179,7 +179,7 @@ abstract class Model implements ModelInface
     {
         $updateObj = $this->writeDB->update($this->table, $datas, $where);
         if ($updateObj !== false) {
-            return $updateObj->rowCount();
+            return $updateObj->rowCount()?true:false;
         }
         return false;
     }
@@ -187,11 +187,6 @@ abstract class Model implements ModelInface
     public function delete($where)
     {
         return $this->writeDB->delete($this->table, $where);
-    }
-
-    public function delete_virtual($where)
-    {
-        return $this->writeDB->update($this->table, $where);
     }
 
     public function replace($columns, $where = null)
