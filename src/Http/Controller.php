@@ -66,20 +66,19 @@ abstract class Controller extends \Yaf\Controller_Abstract
 
     /**
      * @param int $code
-     * @param array $message
+     * @param string $message
      * @param array $data
-     * @param int $count
      */
-    protected function Json($code = 0, $message = [], $data = [], $count = 0)
+    protected function Json( int $code = 0, string $message = '', array $data = [])
     {
         $r_data = [
             'code' => $code,
             'msg' => $message,
-            'data' => $data,
-            'count' => $count,
+            'data' => $data
         ];
-        header('Content-type:text/json');
-        exit(json_encode($r_data));
+        $this->getResponse()->setHeader( 'Content-Type', 'application/json; charset=utf-8' );
+        $this->getResponse()->setBody(json_encode($r_data));
+        exit;
     }
 
     /**
