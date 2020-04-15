@@ -76,9 +76,8 @@ abstract class Controller extends \Yaf\Controller_Abstract
             'msg' => $message,
             'data' => $data
         ];
-        $this->getResponse()->setHeader( 'Content-Type', 'application/json; charset=utf-8' );
-        $this->getResponse()->setBody(json_encode($r_data));
-        exit;
+        header('Content-Type:application/json; charset=UTF-8');
+        exit(json_encode($r_data));
     }
 
     /**
