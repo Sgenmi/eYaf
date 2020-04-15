@@ -17,7 +17,7 @@
     "require": {
         "php": ">=7.1.0",
         "qingbing/php-yaf-doc": "dev-master",
-        "catfan/medoo": "^1.7"
+        "catfan/medoo": "1.7.10"
     },
     "autoload": {
         "psr-4": {
