@@ -25,9 +25,9 @@ class Token
         if (! $token) {
             return [];
         }
-        $key = self::USER_TOKEN .$key.':'. $token;
+        $_key = self::USER_TOKEN .$key.':'. $token;
         $redis = new Redis();
-        $tokenInfo = $redis->get($key);
+        $tokenInfo = $redis->get($_key);
         $info = [];
         if ($tokenInfo) {
             $info=json_decode($tokenInfo, true);
