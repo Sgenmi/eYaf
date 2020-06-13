@@ -11,9 +11,6 @@ namespace Sgenmi\eYaf\Http;
 
 abstract class Controller extends \Yaf\Controller_Abstract
 {
-    protected $_module;
-    protected $_controller;
-    protected $_action;
     protected $isAjax = false;
     protected $isGet = false;
     protected $isPost = false;
@@ -24,9 +21,6 @@ abstract class Controller extends \Yaf\Controller_Abstract
 
     public function init()
     {
-        $this->_module = strtolower($this->getRequest()->getModuleName());
-        $this->_controller = strtolower($this->getRequest()->getControllerName());
-        $this->_action = strtolower($this->getRequest()->getActionName());
         !defined('IS_DISABLE_VIEW') && define('IS_DISABLE_VIEW', true);
         //禁用渲染模板
         if (IS_DISABLE_VIEW) {
@@ -68,6 +62,7 @@ abstract class Controller extends \Yaf\Controller_Abstract
      * @param int $code
      * @param string $message
      * @param array $data
+     * @return bool
      */
     protected function Json( int $code = 0, string $message = '', array $data = [])
     {
@@ -76,8 +71,10 @@ abstract class Controller extends \Yaf\Controller_Abstract
             'msg' => $message,
             'data' => $data
         ];
-        header('Content-Type:application/json; charset=UTF-8');
-        exit(json_encode($r_data));
+        $response = $this->getResponse();
+        $response->setHeader( 'Content-Type', 'application/json; charset=utf-8' );
+        $response->setBody(json_encode($r_data));
+        return true;
     }
 
     /**
@@ -90,11 +87,11 @@ abstract class Controller extends \Yaf\Controller_Abstract
     {
         if (!empty($name)) {
             $val = $this->getRequest()->getParam($name);
-            if (!empty($val)) {
+            if (!empty($val) || (is_numeric($val) && $val==0) ) {
                 return $val;
             }
             $val = $this->getRequest()->getQuery($name);
-            if (!empty($val)) {
+            if (!empty($val) || (is_numeric($val) && $val==0) ) {
                 return $val;
             }
         } else {

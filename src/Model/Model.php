@@ -89,7 +89,8 @@ abstract class Model implements ModelInface
                             ];
                         }
                         if ($fv[0]) {
-                            if ($v !== 0 && empty($v) && !isset($this->check_rule[$k]['in'])) { // 注意有0情况
+
+                            if (!is_numeric($v) && $v !== 0 && empty($v) && !isset($this->check_rule[$k]['in'])) { // 注意有0情况
                                 $ret = $fv[1];
                             }
                         }
