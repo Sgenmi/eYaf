@@ -62,6 +62,7 @@ abstract class Controller extends \Yaf\Controller_Abstract
      * @param int $code
      * @param string $message
      * @param array $data
+     * @return bool
      */
     protected function Json( int $code = 0, string $message = '', array $data = [])
     {
@@ -70,8 +71,10 @@ abstract class Controller extends \Yaf\Controller_Abstract
             'msg' => $message,
             'data' => $data
         ];
-        header('Content-Type:application/json; charset=UTF-8');
-        exit(json_encode($r_data));
+        $response = $this->getResponse();
+        $response->setHeader( 'Content-Type', 'application/json; charset=utf-8' );
+        $response->setBody(json_encode($r_data));
+        return true;
     }
 
     /**
