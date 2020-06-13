@@ -47,7 +47,7 @@ class Tool
      * @param int $val
      * @return float
      */
-    public static function centToYuan(int $val): float
+    public static function centToYuan(int $val):float
     {
         return sprintf("%.2f", $val / 100);
     }
@@ -56,9 +56,36 @@ class Tool
      * @param float $val
      * @return float|int
      */
-    public static function fn_yuanToCent(float $val)
+    public static function yuanToCent(float $val)
     {
         return $val * 100;
+    }
+
+    public static function  parseUrl($url){
+        $urlArr = parse_url(urldecode(htmlspecialchars_decode($url)));
+        $queryStr = $urlArr['query']??'';
+        if(isset($urlArr['fragment'])){
+            $url_fr = 'http://127.0.0.1/';
+            if(strpos($urlArr['fragment'],'?')===false){
+                $url_fr.= '?'.$urlArr['fragment'];
+            }else{
+                $url_fr.=$urlArr['fragment'];
+            }
+            $urlFrArr = parse_url(urldecode(htmlspecialchars_decode($url_fr)));
+            if(isset($urlFrArr['query'])){
+                $queryStr.="&".$urlFrArr['query'];
+            }
+        }
+        $params=[];
+        if($queryStr){
+            $queryArr = explode('&',$queryStr);
+            foreach ($queryArr as $v){
+                $vArr = explode('=',$v);
+                $params[$vArr[0]] = $vArr[1]??'';
+            }
+        }
+        $urlArr['params'] = $params;
+        return $urlArr;
     }
 
 }
