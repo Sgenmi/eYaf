@@ -207,9 +207,7 @@ class Filter
         // HTML转义
         $string = htmlspecialchars($string, ENT_QUOTES, 'UTF-8');
         // 启用了magic_quotes
-        if (! get_magic_quotes_gpc()) {
-            $string = addslashes($string);
-        }
+
         return $string;
     }
 }
