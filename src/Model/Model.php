@@ -46,6 +46,9 @@ abstract class Model implements ModelInface
 
     public function checkField($data, $field = [])
     {
+        if(!$data){
+            return "请求参数为空";
+        }
         if (! $field) {
             $field = array_keys($data);
         }
