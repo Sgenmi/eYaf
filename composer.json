@@ -16,8 +16,8 @@
     "minimum-stability": "dev",
     "require": {
         "php": ">=7.1.0",
-        "qingbing/php-yaf-doc": "dev-master",
-        "catfan/medoo": "1.7.10"
+        "catfan/medoo": "1.7.10",
+        "sgenmi/yaf-help-doc": "dev-master"
     },
     "autoload": {
         "psr-4": {

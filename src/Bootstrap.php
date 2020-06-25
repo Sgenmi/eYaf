@@ -27,11 +27,6 @@ class Bootstrap extends \Yaf\Bootstrap_Abstract
             ini_set('display_errors', 'Off');
         }
     }
-    // 安全输入
-    public function _initFilter()
-    {
-        \Sgenmi\eYaf\Utility\Filter::request();
-    }
 
     private function getDBConfig($isMaster = false)
     {
