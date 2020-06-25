@@ -142,6 +142,21 @@ abstract class Model implements ModelInface
                         if (!strtotime($v)) {
                             $ret = $fv[1];
                         }
+                        break;
+                    case 'array':
+                        if (is_string($fv)) {
+                            $fv = [
+                                true,
+                                $fv
+                            ];
+                        }
+                        if($fv[0]){
+                            if(!is_array($v)){
+                                $ret = $fv[1];
+                            }
+                        }
+                        break;
+
                 }
                 if ($ret !== true) {
                     return $ret;
