@@ -7,1181 +7,1342 @@
 
 namespace Sgenmi\eYaf\Cache;
 
+use Yaf\Exception;
 
-class Redis implements CacheIface
-{
-    private $_redis = NULL;
-    private $_redis_config = array(
-        'host' => '127.0.0.1',
-        'port' => '6379',
-        'auth' => ''
-    );
+class Redis {
 
-    public function __construct(string $redisName = 'app')
+    /**
+     * @var \Redis
+     */
+    private $redis;
+    private $config=[];
+    public function __construct(string $name='app')
     {
-        $_config = \Yaf\Registry::get('_config');
-
-        if(!isset($_config->redis->$redisName)){
-            throw new \Yaf\Exception($redisName.": redis配置不存在");
+        $gCofnig = \Yaf\Registry::get('_config');
+        $config = $gCofnig->redis->$name;
+        if(!$config) {
+            throw new Exception("Can't find $name configuration with redis");
         }
-        $_redis_config = $_config->redis->$redisName->toArray();
-
-        if (isset($_redis_config['host']) && $_redis_config['host']) {
-            $this->_redis_config['host'] = $_redis_config['host'];
+        if(!isset($config['host']) || !isset($config['port'])) {
+            throw new Exception("Can't find $name's host|port configuration with redis");
         }
-        if (isset($_redis_config['port']) && $_redis_config['port']) {
-            $this->_redis_config['port'] = $_redis_config['port'];
-        }
-        if (isset($_redis_config['auth']) && $_redis_config['auth']) {
-            $this->_redis_config['auth'] = $_redis_config['auth'];
-        }
-
-        $this->_redis = new \Redis();
-        $this->_redis_connect();
+        $this->config = $config;
+        $this->connect();
     }
 
-    private function _redis_connect()
-    {
-        try {
-            $this->_redis->connect($this->_redis_config['host'], $this->_redis_config['port'], 10000);
-            if ($this->_redis_config['auth']) {
-                $this->_redis->auth($this->_redis_config['auth']);
-            }
-        } catch (\Exception $exc) {
-            $this->_redis = NULL;
+    private function connect() {
+        $redis = new \Redis();
+        $timeout = $this->config['timeout']??0;
+        $redis->connect($this->config['host'],$this->config['port'],$timeout);
+
+        if(isset($this->config['auth']) && $this->config['auth'] ) {
+            $redis->auth($this->config['auth']);
         }
+        if(isset($this->config['select']) && $this->config['select']) {
+            $redis->select((int) $this->config['select']);
+        }
+        $this->redis = $redis;
     }
 
-    // 获取redis对象
-    public function getRedis()
+    /**
+     * @desc get Redis Object
+     * @return \Redis
+     */
+    public function getRedis():\Redis
     {
         return $this->_redis;
     }
 
-    /*
-     * title:追增字符串到$key的值 return 追加后的长度
-     * $key:[string]
-     * $value:[string]
+    /**
+     * @param string $key
+     * @return string
+     */
+    public function getKey(string $key):string {
+        $prefix = $this->config['prefix'] ?? '';
+        if (isset( $this->config['encrypt']) && $this->config['encrypt']) {
+            $key = $prefix.':'.md5($key);
+        }
+        return $key;
+    }
+
+    /**
+     * @param int $key
+     * @param $val
+     * @return bool
+     */
+    public function setOption(int $key,$val):bool {
+        return $this->redis->setOption($key,$val);
+    }
+
+    /**
+     * @param int $key
+     * @return mixed|null
+     */
+    public function getOption(int $key) {
+        return $this->redis->getOption($key);
+    }
+
+    /**
+     * @param string $str
+     * @return mixed
+     */
+    public function ping ( string $str='' ){
+      return $this->redis->ping($str);
+    }
+
+    /**
+     * Append specified string to the string stored in specified key.
+     *
+     * @param string       $key
+     * @param string|mixed $value
+     *
+     * @return int Size of the value after the append
      */
     public function append(string $key, $value = NULL)
     {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->append($key, (string)$value);
+        $key = $this->getKey($key);
+        return $this->redis->append($key, (string)$value);
     }
 
-    /*
-     * // Simple key -> value set
-     * $redis->set('key', 'value');
+    /**
+     * Decrement the number stored at key by one.
      *
-     * // Will redirect, and actually make an SETEX call
-     * $redis->set('key','value', 10);
+     * @param string $key
      *
-     * // Will set the key, if it doesn't exist, with a ttl of 10 seconds
-     * $redis->set('key', 'value', Array('nx', 'ex'=>10);
+     * @return int the new value
+     */
+    public function decr(string $key){
+        $key = $this->getKey($key);
+        return $this->redis->decr();
+    }
+
+    /**
+     * Decrement the number stored at key by one.
+     * If the second argument is filled, it will be used as the integer value of the decrement.
      *
-     * // Will set a key, if it does exist, with a ttl of 1000 miliseconds
-     * $redis->set('key', 'value', Array('xx', 'px'=>1000);
+     * @param string $key
+     * @param int    $value  that will be substracted to key (only for decrBy)
      *
+     * @return int the new value
      */
-    public function set(string $key, $value = NULL, int $time = 0)
+    public function decrBy(string $key, int $value)
     {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-        if ($time && (is_int($time) || is_array($time))) {
-            return $this->_redis->set($key, $value, $time); // $time 秒为单位
-        } else {
-            return $this->_redis->set($key, $value);
-        }
+        $key = $this->getKey($key);
+        return $this->redis->decrBy($key,$value);
     }
 
-    public function setex($key, $time = 0, $value = NULL)
-    {
-        return $this->set($key, $value, $time);
-    }
-
-    /*
-     * title:设置$key的值$value,如果不存在,则成功,反之失败, return true or false;
-     */
-    public function setnx(string $key, $value = NULL)
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->setnx($key, $value);
-    }
-
-    public function get(string $key)
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-        $d = $this->_redis->get($key);
-        return $d;
-    }
-
-    /*
-     * title:删除key,返回删除数量
-     * $key:[string,array]
-     * $redis->delete('key1', 'key2'); return 2
-     * $redis->delete(array('key3', 'key4')); return 2
-     */
-    public function del(string $key)
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-
-        return $this->_redis->del($key);
-    }
-
-    /*
-     * title :检测key是否存在,return true or return false
-     * $key:[string]
-     */
-    public function exists(string $key):bool
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-
-        return $this->_redis->exists($key);
-    }
-
-    /*
-     * title :设置key过期时间,return true or return false
-     * $key:[string],
-     * $time:[int]
-     */
-    public function expire(string $key, $time = 86400):bool
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->expire($key, (int)$time);
-    }
-
-    /*
-     * title :设置key过期时间[时间戳],return true or return false
-     * $key:[string],
-     * $time:[int时间戳]
-     */
-    public function expireAt(string $key, $time = 0):int
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->expireAt($key, $time);
-    }
-
-    /*
-     * $redis->incr('key1'); key1 didn't exists, set to 0 before the increment
-     * and now has the value 1
-     * $redis->incr('key1'); 2
-     * $redis->incr('key1'); 3
-     * $redis->incr('key1'); 4
-     * $redis->incrBy('key1', 10); 14
-     */
-    public function incr($key):int
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-
-        return $this->_redis->incr($key);
-    }
-
-    // 见上面
-    public function incrBy($key, $count = 0):int
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-        $count = intval($count);
-        return $this->_redis->incrBy($key, $count);
-    }
-
-    /*
-     * title:增加key浮点精度的值,return 增加后的新值
-     * $key:[string]
-     */
-    public function incrByFloat($key, $value = 0.0):float
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->incrByFloat($key, $value);
-    }
-
-    /*
-     * title:自减1 return 自减后的结果
-     * $key:[string]
-     */
-    public function decr($key):int
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-
-        return $this->_redis->incr($key);
-    }
-
-    /*
-     * title:从$key数值中减掉$count ,return 减后的结果
-     * $key:[string],
-     * $count:[int]
-     */
-    public function decrBy($key, $count = 0):int
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-        $count = intval($count);
-        return $this->_redis->incrBy($key, $count);
-    }
-
-    /*
-     * title:获取$key中$start_len位置到$end_len位位置的值 [第一个位位置是0],return string
-     * $key:[string],
-     * $start_len:[int]
-     * $end_len:[int]
-     */
-    public function getRange(string $key, int $start_len = 0, $end_len = 0)
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->getRange($key, (int)$start_len, (int)$end_len);
-    }
-
-    /*
-     * title:从$start_len位置替换$key的值为$value,保留其他,只替换$value长度,return 新的长度
-     * $key:[string],
-     * $start_len:[int]
-     * $value:[string]
-     */
-    public function setRange(string $key, int $start_len = 0, $value = NULL)
-    {
-        if (!$key || !$this->_redis || !is_string($value)) {
-            return FALSE;
-        }
-        return $this->_redis->setRange($key, (int)$start_len, $value);
-    }
-
-    /*
-     * title:获取一个key值的长度
-     * $key:[string],
-     */
-    public function strlen(string $key):int
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->strlen($key);
-    }
-
-    /*
-     * $redis->set('key1', 'value1');
-     * $redis->set('key2', 'value2');
-     * $redis->set('key3', 'value3');
-     * $redis->mGet(array('key1', 'key2', 'key3')); array('value1', 'value2', 'value3');
-     * $redis->mGet(array('key0', 'key1', 'key5')); array(`FALSE`, 'value2', `FALSE`);
-     */
-    public function mGet(array $key_value = array()):array
-    {
-        if (!$key_value || !is_array($key_value) || !$this->_redis) {
-            return array();
-        }
-
-        return $this->_redis->mGet($key_value);
-    }
-
-    /*
-     * title:多个key同时设置,array('k1'=>'v1','k2'=>'v1'),return true or false
-     */
-    public function mSet(array $key_value = array()):bool
-    {
-        if (!$key_value || !is_array($key_value) || !$this->_redis) {
-            return false;
-        }
-        return $this->_redis->mSet($key_value);
-    }
-
-    /*
-     * title:多个key同时设置,array('k1'=>'v1','k2'=>'v1'),return true or false
-     * 注意:如果其中任何一个key已存在,则都不会被设置
-     */
-    public function mSetNX(array $key_value = array()):bool
-    {
-        if (!$key_value || !is_array($key_value) || !$this->_redis) {
-            return false;
-        }
-        return $this->_redis->mSetNX($key_value);
-    }
-
-    /*
-     * $redis->set('x', '42');
-     * $exValue = $redis->getSet('x', 'lol'); // return '42', replaces x by 'lol'
-     * $newValue = $redis->get('x')' // return 'lol'
-     */
-    public function getSet(string $key, $value = NULL)
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-
-        if ($this->exists($key)) {
-            return $this->_redis->getSet($key, $value);
-        }
-        return FALSE;
-    }
-
-    // 注:$key绝不能为*,key大,很严重;
-    public function keys(string $key = "*"):array
-    {
-        if ($key == "*" || !$this->_redis) {
-            return [];
-        }
-        return $this->_redis->keys($key);
-    }
-
-    // 真正获取所有吸key
-    public function get_keys(string $key = "*"):array
-    {
-        if (!$key || !$this->_redis) {
-            return [];
-        }
-        return $this->_redis->keys($key);
-    }
-
-    /*
-     * title:移动key到db_index数据库 ,return true or false;
-     * $key:[string]
-     * $db_index:[0~15]
-     */
-    public function move(string $key, int $db_index = 0):bool
-    {
-        if (!$key || $db_index > 15 || $db_index < 0 || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->move($key, $db_index);
-    }
-
-    // 随机一个key返回
-    public function randomKey()
-    {
-        if (!$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->randomKey();
-    }
-
-    /*
-     * title:key重命名,return true or false
-     * $old_key:[string]
-     * $new_key:[string]
-     * 注意:如果$new_key本身就存在,重命名后,则复盖原来的$new_key的值,切记
+    /**
+     * Get the value related to the specified key
      *
-     */
-    public function rename(string $old_key, string $new_key):bool
-    {
-        if (!$old_key || !$new_key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->rename($old_key, $new_key);
-    }
-
-    /*
-     * title:key重命名,return true or false
-     * $old_key:[string]
-     * $new_key:[string]
-     * 注意:如果$new_key本身就存在,重命名失败
+     * @param string $key
      *
+     * @return string|mixed|bool If key didn't exist, FALSE is returned.
      */
-    public function renameNx(string $old_key, string $new_key):bool
-    {
-        if (!$old_key || !$new_key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->renameNx($old_key, $new_key);
+
+    public function get(string $key){
+        $key = $this->getKey($key);
+        return $this->redis->get($key);
     }
 
-    // 获限key的类型
-    public function type(string $key):string
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->type($key);
-    }
-
-    /*
-     * title:排序列表中的元素,根据实际情况返回值不同
-     * $key:[string]
-     * $option:[array]
-     * array(
-     * 'by' => 'some_pattern_*',
-     * 'limit' => array(0, 1),
-     * 'get' => 'some_other_pattern_*' or an array of patterns,
-     * 'sort' => 'asc' or 'desc',
-     * 'alpha' => TRUE,
-     * 'store' => 'external-key'
-     * )
+    /**
+     * Return a single bit out of a larger string
      *
-     */
-    public function sort($key, $option = array())
-    {
-        if (!$key || !is_array($option) || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->sort($key, $option);
-    }
-
-    // 返回key有效期时间,无有效期:返回-1,当key不存在:返回-2
-    public function ttl($key)
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->ttl($key);
-    }
-
-    /*
-     * title:获取正则$pattern所有key,和keys命令类似,return array;
-     * $pattern:[string]
-     * $count:[int]
-     */
-    public function Scan(string $pattern, int $count = 10):array
-    {
-        $ret = array();
-        if (!$this->_redis) {
-            return [];
-        }
-        // $this->_redis->setOption( Redis::OPT_SCAN, Redis::SCAN_RETRY );
-        $it = NULL;
-        while ($arr_keys = $this->_redis->Scan($it, $pattern, $count)) {
-            foreach ($arr_keys as $v) {
-                $ret[] = $v;
-            }
-        }
-        return $ret;
-    }
-
-    // HASH表操作
-
-    /*
-     * title:设置$key中$hash_key元素值为$value,return true or false;
-     * 注:如果$key的中的元素存在,则$value值复盖旧的值
-     * $key:[string]
-     * $hash_key:[string]
-     * $value:[string]
-     */
-    public function hSet(string $key, string $member_key, $value = NULL):bool
-    {
-        if (!$key || !$member_key || !$this->_redis) {
-            return FALSE;
-        }
-
-        return $this->_redis->hSet($key, (string)$member_key, (string)$value);
-    }
-
-    /*
-     * title:设置$key的hash表中$member_key成员的值,return true or false;
-     * $key:[string]
-     * $member_key:[array]
-     */
-    public function hMSet(string $key, array $member_key = array()):bool
-    {
-        if (!$key || !$member_key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->hMSet($key, $member_key);
-    }
-
-    // 同上
-    // 注:如果$key的中的元素存在,则设置失败
-    public function hSetNx(string $key, string $member_key, $value = NULL):bool
-    {
-        if (!$key || !$member_key || !$this->_redis || !$value) {
-            return FALSE;
-        }
-
-        return $this->_redis->hSetNx($key, $member_key, $value);
-    }
-
-    /*
-     * title:获取$key的hash表中$member_key成员的值,return string or false;
-     * $key:[string]
-     * $member_key:[string]
-     */
-    public function hGet(string $key, string $member_key)
-    {
-        if (!$key || !$member_key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->hGet($key, $member_key);
-    }
-
-    /*
-     * title:获取$key的hash表中$member_key成员的值,return array;
-     * $key:[string]
-     * $member_key:[array]
-     */
-    public function hMGet(string $key, array $member_key = array()):array
-    {
-        if (!$key || !$member_key || !$this->_redis) {
-            return [];
-        }
-        return $this->_redis->hMGet($key, $member_key);
-    }
-
-    /*
-     * title:获取$key的hash表中所有成员的值,return array;
-     * $key:[string]
-     */
-    public function hGetAll(string $key):array
-    {
-        if (!$key || !$this->_redis) {
-            return [];
-        }
-        return $this->_redis->hGetAll($key);
-    }
-
-    /*
-     * title:检测$member_key成员是否在$key的hash表中,return true or false
-     * $key:[string]
-     * $member_key:[string]
-     */
-    public function hExists(string $key, string $member_key):bool
-    {
-        if (!$key || !$member_key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->hExists($key, $member_key);
-    }
-
-    /*
-     * title:增加$int到$key的hash表中$member_key的值,return 增加后的整数数值
-     * $key:[string]
-     * $member_key:[string]
-     * $int:[int]
-     */
-    public function hIncrBy(string $key,string $member_key,int $int = 0):int
-    {
-        if (!$key || !$member_key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->hIncrBy($key, $member_key, (int)$int);
-    }
-
-    /*
-     * title:增加$float到$key的hash表中$member_key的值,return 增加后的浮点数值
-     * $key:[string]
-     * $member_key:[string]
-     * $float:[float]
-     */
-    public function hIncrByFloat(string $key, string $member_key,float $float = 0):float
-    {
-        if (!$key || !$member_key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->hIncrByFloat($key, $member_key, (float)$float);
-    }
-
-    /*
-     * title:获取$key的hash表中所有成员,return array;
-     * $key:[string]
-     */
-    public function hKeys(string $key):array
-    {
-        if (!$key || !$this->_redis) {
-            return [];
-        }
-        return $this->_redis->hKeys($key);
-    }
-
-    /*
-     * title:获取$key的hash表中成员个数,return 整数数值 or false;
-     * $key:[string]
-     */
-    public function hLen(string $key)
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->hLen($key);
-    }
-
-    /*
-     * title:获取$key的hash表中所有成员值,return array;
-     * $key:[string]
-     */
-    public function hVals(string $key):array
-    {
-        if (!$key || !$this->_redis) {
-            return [];
-        }
-        return $this->_redis->hVals($key);
-    }
-
-    /*
-     * title:删除$key的hash表中$member_key,return 1 or 0 ->true or false;
-     * $key:[string]
-     * $member_key:[string]
-     */
-    public function hDel(string $key, string $member_key)
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->hDel($key, $member_key);
-    }
-
-    /*
-     * title:获取$key的hash表中正则$pattern所有成员值,return array;
-     * $key:[string],
-     * $pattern:[string]
-     */
-    public function hScan(string $key, string $pattern, int $count = 10):array
-    {
-        $ret = array();
-        if (!$key || !$this->_redis) {
-            return [];
-        }
-        // $this->_redis->setOption( Redis::OPT_SCAN, Redis::SCAN_RETRY );
-        $it = NULL;
-        while ($arr_keys = $this->_redis->hScan($key, $it, $pattern, $count)) {
-            foreach ($arr_keys as $k => $v) {
-                $ret[$k] = $v;
-            }
-        }
-        return $ret;
-    }
-
-    // Lists
-
-    /*
-     * title:按参数 key 的先后顺序依次检查各个列表，弹出第一个非空列表的头元素 return array
+     * @param string $key
+     * @param int    $offset
      *
-     * $key:[array]
-     * $timeout:[int]
+     * @return int the bit value (0 or 1)
      */
-    public function blPop(array $key = array(),int $timeout = 2):array
-    {
-        if (!$key || !$this->_redis) {
-            return [];
-        }
-        return $this->_redis->blPop((array)$key, $timeout);
+    public function getBit(string $key,int $offset){
+        $key = $this->getKey($key);
+        return $this->redis->getBit($key,$offset);
     }
 
-    /*
-     * title:按参数 key 的先后顺序依次检查各个列表，弹出第一个非空列表的尾元素 return array
+    /**
+     * Return a substring of a larger string
      *
-     * $key:[array]
-     * $timeout:[int]
-     */
-    public function brPop($key = array(), $timeout = 2)
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->brPop((array)$key, $timeout);
-    }
-
-    /*
-     * title:(1)将列表 $key 中的最后一个元素(尾元素)弹出，并返回给客户端。
-     * (2)将 $key 弹出的元素插入到列表 $dstkey ，作为 $dstkey 列表的的头元素
-     */
-    public function brpoplpush($key, $dstkey = NULL, $timeout = 2)
-    {
-        if (!$key || !$dstkey || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->brPop($key, $dstkey, $timeout);
-    }
-
-    /*
-     * title:获限$key列表中索引$index的值 return string or false
-     * $key:[string]
-     * $index:[int]
-     */
-    public function lIndex($key, $index = 0)
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-
-        return $this->_redis->lIndex($key, (int)$index);
-    }
-
-    public function lGet($key, $index = 0)
-    {
-        return $this->lIndex($key, $index);
-    }
-
-    /*
-     * title:将值 value 插入到列表 key 当中，位于值 pivot 之前或之后 当key或者pivot不存在时,
-     * return:(1)返回0,-1[pivot不存在],操作失败,(2)返回大于0的整数,操作在功
-     * $key:[string]
-     * $position:(before,after)
-     * $pivot:[string]
-     * $value:[string]
-     */
-    public function lInsert($key, $position = 'before', $pivot = NULL, $value = NULL)
-    {
-        if (!$key || !$position || !$this->_redis) {
-            return FALSE;
-        }
-        $position = $position ? $position : 'before';
-        $_pt = Redis::AFTER;
-        if (strtolower($position) == 'before') {
-            $_pt = Redis::BEFORE;
-        }
-        return $this->_redis->lInsert($key, $_pt, $pivot, $value);
-    }
-
-    /*
-     * title:获取列表 key 的长度。return int or false
-     * $key:[string]
-     */
-    public function lLen($key)
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->lLen($key);
-    }
-
-    /*
-     * title:移除并返回列表 key 的头元素。return STRING or false
-     * $key:[string]
-     */
-    public function lPop($key)
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->lPop($key);
-    }
-
-    /*
-     * title:將$value值插入到列表key的头元素。return int or false
-     * $key:[string]
-     */
-    public function lPush($key, $value)
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->lPush($key, $value);
-    }
-
-    /*
-     * title:將$value值插入到列表key的头元素。return int or false
-     * 返回:(1)当key不存在,返回0,(2)成功返回位数,(3)当key不是列表时返回false;
-     * $key:[string]
-     */
-    public function lPushx($key, $value)
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->lPushx($key, $value);
-    }
-
-    /*
-     * title:获取列表 key 中指定区间内的元素，区间以偏移量 $start_index 和 $end_index 指定索引地址。
-     * return array
-     * $key:[string]
-     * $start_index:[int]
-     * $end_index:[int]
+     * @param string $key
+     * @param int    $start
+     * @param int    $end
      *
+     * @return string the substring
      */
-    public function lRange($key, $start_index = 0, $end_index = -1)
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->lRange($key, (int)$start_index, (int)$end_index);
-    }
+     public function getRange(string $key, int $start, int $end):string {
+         $key = $this->getKey($key);
+         return $this->redis->getRange($key,$start,$end);
+     }
 
-    /*
-     * title:移除列表key中$count个等于$value的值 return 成功的个数,当key不是list返回false
-     * $key :[string]
-     * $value :[string]
-     * $count :[int]
-     */
-    public function lRem($key, $value, $count = 1)
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->lRem($key, $value, (int)$count);
-    }
-
-    /*
-     * title:设置列表key中索引位置$index的值$value return true or false;
-     * $key :[string]
-     * $index :[int]
-     * $value :[string]
-     */
-    public function lSet($key, $index = 0, $value = NULL)
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->lSet($key, (int)$index, $value);
-    }
-
-    /*
-     * title:保留索引$start_index至$end_index的所有列表值,其他都删除;
-     * $key :[string]
-     * $start_index :[int]
-     * $end_index :[int]
-     */
-    public function lTrim($key, $start_index = 0, $end_index = -1)
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->lTrim($key, (int)$start_index, (int)$end_index);
-    }
-
-    /*
-     * title:移除并返回列表 key 的尾元素。return STRING or false
-     * $key:[string]
-     */
-    public function rPop($key)
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->rPop($key);
-    }
-
-    /*
-     * title:(1)将列表 $key 中的最后一个元素(尾元素)弹出，并返回给客户端。
-     * (2)将 $key 弹出的元素插入到列表 $dstkey ，作为 $dstkey 列表的的头元素
-     */
-    public function rpoplpush($key, $dstkey = NULL)
-    {
-        if (!$key || !$dstkey || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->brPop($key, $dstkey);
-    }
-
-    /*
-     * title:將$value值插入到列表key的尾元素。return int or false
-     * $key:[string]
-     * $value:[string]
-     */
-    public function rPush($key, $value = NULL)
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->rPush($key, $value);
-    }
-
-    /*
-     * title:將$value值插入到列表key的尾元素。return int or false
-     * 返回:(1)当key不存在,返回0,(2)成功返回位数,(3)当key不是列表时返回false;
-     * $key:[string]
-     */
-    public function rPushx($key, $value = NULL)
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->rPushx($key, $value);
-    }
-
-    // 无序集合
-    /*
+    /**
+     * Sets a value and returns the previous entry at that key.
      *
-     * title :增加无序集合
-     * content: $value:[string],return 1 or return 0
-     * $value:[array],return array
+     * @param string       $key
+     * @param string|mixed $value
+     *
+     * @return string|mixed A string (mixed, if used serializer), the previous value located at this key
      */
-    public function sAdd($key, $value = NULL, $result = FALSE)
-    {
-        if (!$key || !$value || !$this->_redis) {
-            return FALSE;
-        }
-        if (is_array($value)) {
-            if ($result) {
-                foreach ($value as $v) {
-                    if ($v) {
-                        $ret[$v] = $this->_redis->sAdd($key, $value);
-                    }
-                }
-            } else {
-                $v = $this->member_array(array(
-                    $key
-                ), $value);
-                $ret = call_user_func_array(array(
-                    $this->_redis,
-                    "sAdd"
-                ), $v);
-            }
-        } else {
-            $ret = $this->_redis->sAdd($key, $value);
-        }
-        return $ret;
-    }
+     public function getSet(string $key, $value) {
+         $key = $this->getKey($key);
+         return $this->redis->getSet($key,$value);
+     }
 
-    /*
-     * title:获限无序集合长度
-     * content:$key:[string]
+    /**
+     * Increment the number stored at key by one.
+     *
+     * @param   string $key
+     *
+     * @return int the new value
      */
-    public function sCard($key)
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->sCard($key);
-    }
+     public function incr(string $key){
+         $key = $this->getKey($key);
+         return $this->redis->incr($key);
+     }
 
-    /*
-     * title:获限无序集合中差集
-     * content:$key:[string]为主key,
-     * $diff_key:[string,array]对比差集key,已$key为主体
+    /**
+     * Increment the number stored at key by one.
+     * If the second argument is filled, it will be used as the integer value of the increment.
+     *
+     * @param string $key   key
+     * @param int    $value value that will be added to key (only for incrBy)
+     *
+     * @return int the new value
      */
-    public function sDiff($key, $diff_key = NULL)
-    {
-        if (!$key || !$diff_key || !$this->_redis) {
-            return FALSE;
-        }
-        $v = $this->member_array(array(
-            $key
-        ), $diff_key);
-        return $this->_redis->sDiff($v);
+    public function incrBy(string $key, int $vallue){
+        $key = $this->getKey($key);
+        return $this->redis->incrBy($key,$vallue);
     }
 
-    /*
-     * title:获限无序集俣中差集结果并放入$key中
-     * content:$key:[string]放入结果集key
-     * $main_key:[string]比较差集主key,
-     * $diff_key:[string,array]对比差集key,已$main_key为主体
+    /**
+     * Increment the float value of a key by the given amount
+     *
+     * @param string $key
+     * @param float  $increment
+     *
+     * @return float
      */
-    public function sDiffStore($key, $main_key = NULL, $diff_key = NULL)
-    {
-        if (!$key || !$main_key || !$diff_key || !$this->_redis) {
-            return FALSE;
-        }
-
-        $v = $this->member_array(array(
-            $key,
-            (string)$main_key
-        ), $diff_key);
-        return $this->_redis->sDiffStore($v);
+    public function incrByFloat(string $key, float $value){
+        $key = $this->getKey($key);
+        return $this->redis->incrByFloat($key,$value);
     }
 
-    /*
-     * title:获限无序集合的交集
-     * content: $key:[string,array]
+    /**
+     * Returns the values of all specified keys.
+     *
+     * For every key that does not hold a string value or does not exist,
+     * the special value false is returned. Because of this, the operation never fails.
+     *
+     * @param array $array
+     *
+     * @return array
      */
-    public function sInter($key)
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-
-        return $this->_redis->sInter((array)$key);
+    public function mGet(array $array){
+        return $this->redis->mGet($array);
     }
 
-    /*
-     * title:获限无序集合中交集结果并放入$key中
-     * content:$key:[string]放入结果集key
-     * $inter_key:[string,array]交集,
+    /**
+     * Sets multiple key-value pairs in one atomic command.
+     * MSETNX only returns TRUE if all the keys were set (see SETNX).
+     *
+     * @param array $array Pairs: array(key => value, ...)
+     *
+     * @return bool TRUE in case of success, FALSE in case of failure
      */
-    public function sInterStore($key, $inter_key)
-    {
-        if (!$key || !$inter_key || !$this->_redis) {
-            return FALSE;
-        }
+    public function mSet(array $array){
+        $key = $this->getKey($key);
+        $_arr=[];
 
-        $v = $this->member_array(array(
-            $key
-        ), $inter_key);
-        return $this->_redis->sInterStore($v);
+        foreach ($array as $k=>$v){
+            $key = $this->getKey($key);
+            $_arr[$key] = $v;
+        }
+        return $this->redis->mSet($_arr);
     }
 
-    /*
-     * title:获限无序集合中合集
-     * content: $key:[string,array]
+    /**
+     * Set the string value in argument as value of the key.
+     *
+     * @since If you're using Redis >= 2.6.12, you can pass extended options as explained in example
+     *
+     * @param string       $key
+     * @param string|mixed $value string if not used serializer
+     * @param int|array    $timeout [optional] Calling setex() is preferred if you want a timeout.<br>
+     *
+     * @return bool TRUE if the command is successful
      */
-    public function sUnion($key)
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-
-        return $this->_redis->sUnion((array)$key);
+    public function set(string $key, $value, $timeout = null){
+        $key = $this->getKey($key);
+        return $this->redis->set($key, $value, $timeout = null);
     }
 
-    /*
-     * title:获限无序集合中合集结果并放入$key中
-     * content:$key:[string]放入结果集key
-     * $inter_key:[string,array]交集,
+    /**
+     * Changes a single bit of a string.
+     *
+     * @param string   $key
+     * @param int      $offset
+     * @param bool|int $value  bool or int (1 or 0)
+     *
+     * @return int 0 or 1, the value of the bit before it was set
      */
-    public function sUnionStore($key, $union_key)
-    {
-        if (!$key || !$union_key || !$this->_redis) {
-            return FALSE;
-        }
-
-        $v = $this->member_array(array(
-            $key
-        ), $union_key);
-        return $this->_redis->sUnionStore($v);
+    public function setBit(string $key, int $offset, $value ){
+        $key = $this->getKey($key);
+        return $this->redis->setBit($key, $offset, $value);
     }
 
-    /*
-     * title:检查$value值是否在key集合中 return true or return false
-     * $key:[string]
+    /**
+     * Set the string value in argument as value of the key, with a time to live.
+     *
+     * @param string       $key
+     * @param int          $ttl
+     * @param string|mixed $value
+     *
+     * @return bool TRUE if the command is successful
      */
-    public function sIsMember($key, $value = NULL)
-    {
-        if (!$key || !$value || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->sIsMember($key, $value);
+    public function setEx(string $key, int $ttl, $value ){
+        $key = $this->getKey($key);
+        return $this->redis->setEx($key,$ttl,$value);
     }
 
-    /*
-     * title:获取key集合 return array
-     * $key:[string]
+    /**
+     * Set the value and expiration in milliseconds of a key.
+     *
+     * @see     setex()
+     * @param   string       $key
+     * @param   int          $ttl, in milliseconds.
+     * @param   string|mixed $value
+     *
+     * @return bool TRUE if the command is successful
      */
-    public function sMembers($key)
-    {
-        if (!$key || !$this->_redis) {
-            return array();
-        }
-        return $this->_redis->sMembers($key);
+    public function pSetEx(string $key, int $ttl, $value ){
+        $key = $this->getKey($key);
+        return $this->redis->pSetEx($key,$ttl,$value);
     }
 
-    /*
-     * title:移动$from_key集合中$value值到$to_key return true or return false
-     * $from_key:[string]
-     * $to_key:[string]
-     * $value:[string]
+    /**
+     * Set the string value in argument as value of the key if the key doesn't already exist in the database.
+     *
+     * @param string       $key
+     * @param string|mixed $value
+     *
+     * @return bool TRUE in case of success, FALSE in case of failure
      */
-    public function sMove($from_key, $to_key, $value = NULL)
-    {
-        if (!$from_key || !$to_key || !$value || !$this->_redis) {
-            return FALSE;
-        }
-        $v = $this->member_array(array(
-            $from_key,
-            $to_key
-        ), $value);
-        return call_user_func_array(array(
-            $this->_redis,
-            "sMove"
-        ), $v);
+    public function setNx(string $key, $value ){
+        $key = $this->getKey($key);
+        return $this->redis->setNx($key, $value);
     }
-
-    /*
-     * title:随机弹出一个value,并移除, return value or return false;
-     * $key:[string]
+    /**
+     * Changes a substring of a larger string.
+     *
+     * @param string $key
+     * @param int    $offset
+     * @param string $value
+     *
+     * @return int the length of the string after it was modified
      */
-    public function sPop($key)
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->sPop($key);
+    public function setRange(string $key, int $offset, string $value ){
+        $key = $this->getKey($key);
+        return $this->redis->setRange($key, $offset, $value);
     }
 
-    /*
-     * title:随机弹出$count个value,不移除, return value or return array;
-     * $key:[string]
+    /**
+     * Get the length of a string value.
+     *
+     * @param string $key
+     * @return int
      */
-    public function sRandMember($key, $count = 0)
-    {
-        if (!$key || !$count || !is_numeric($count) || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->sRandMember($key, intval($count));
+    public function strLen(string $key){
+        $key = $this->getKey($key);
+        return $this->redis->strLen($key);
     }
 
-    /*
-     * title:移除$key集合中$value, return移出个数;
-     * $key:[string]
+    /**
+     * Remove specified keys.
+     *
+     * @param   int|string|array $key1 An array of keys, or an undefined number of parameters, each a key: key1 key2 key3 ... keyN
+     * @param   int|string       ...$otherKeys
+     *
+     * @return int Number of keys deleted
      */
-    public function sRem($key, $value = NULL)
-    {
-        if (!$key || !$value || !$this->_redis) {
-            return FALSE;
+    public function del( string $key ){
+        $key = $this->getKey($key);
+        return $this->redis->del($key);
+    }
+
+    /**
+     * Verify if the specified key/keys exists
+     *
+     * This function took a single argument and returned TRUE or FALSE in phpredis versions < 4.0.0.
+     *
+     * @since >= 4.0 Returned int, if < 4.0 returned bool
+     *
+     * @param string|string[] $key
+     *
+     * @return int|bool The number of keys tested that do exist
+     */
+    public function exists( string $key ){
+        $key = $this->getKey($key);
+        return $this->redis->exists($key);
+    }
+    /**
+     * Sets an expiration date (a timeout) on an item
+     *
+     * @param string $key The key that will disappear
+     * @param int    $ttl The key's remaining Time To Live, in seconds
+     *
+     * @return bool TRUE in case of success, FALSE in case of failure
+     */
+    public function expire( string $key, int $ttl){
+        $key = $this->getKey($key);
+        return $this->redis->expire($key,$ttl);
+    }
+
+    /**
+     * Remove the expiration timer from a key.
+     *
+     * @param string $key
+     *
+     * @return bool TRUE if a timeout was removed, FALSE if the key didn’t exist or didn’t have an expiration timer.
+     */
+    public function persist( string $key){
+        $key = $this->getKey($key);
+        return $this->redis->persist($key);
+    }
+    /**
+     * Returns a random key
+     *
+     * @return string an existing key in redis
+     */
+    public function randomKey(){
+        return $this->redis->randomKeyu();
+    }
+
+    /**
+     * Renames a key
+     *
+     * @param string $srcKey
+     * @param string $dstKey
+     *
+     * @return bool TRUE in case of success, FALSE in case of failure
+     */
+    public function rename(string $srcKey,string $dstKey){
+        $str = $this->getKey($srcKey);
+        $dst = $this->getKey($srcKey);
+        return $this->redis->rename($str,$dst);
+    }
+
+    /**
+     * Renames a key
+     *
+     * Same as rename, but will not replace a key if the destination already exists.
+     * This is the same behaviour as setNx.
+     *
+     * @param string $srcKey
+     * @param string $dstKey
+     *
+     * @return bool TRUE in case of success, FALSE in case of failure
+     */
+    public function renameNx(string $srcKey,string $dstKey){
+        $str = $this->getKey($srcKey);
+        $dst = $this->getKey($srcKey);
+        return $this->redis->renameNx($str,$dst);
+    }
+
+    /**
+     * Returns the type of data pointed by a given key.
+     *
+     * @param string $key
+     *
+     * @return int
+     */
+    public function type(string $key){
+        $key = $this->getKey($key);
+        return $this->redis->type($key);
+    }
+
+
+    /**
+     * Returns the time to live left for a given key, in seconds. If the key doesn't exist, FALSE is returned.
+     *
+     * @param string $key
+     *
+     * @return int|bool the time left to live in seconds
+     */
+    public function ttl(string $key){
+        $key = $this->getKey($key);
+        return $this->redis->ttl($key);
+    }
+
+    /**
+     * Removes a values from the hash stored at key.
+     * If the hash table doesn't exist, or the key doesn't exist, FALSE is returned.
+     *
+     * @param string $key
+     * @param string $hashKey1
+     * @param string ...$otherHashKeys
+     *
+     * @return int|bool Number of deleted fields
+     */
+    public function hDel(string $key,string $hashKey){
+        $key = $this->getKey($key);
+        return $this->redis->hDel($key,$hashKey);
+    }
+
+    /**
+     * Verify if the specified member exists in a key.
+     *
+     * @param string $key
+     * @param string $hashKey
+     *
+     * @return bool If the member exists in the hash table, return TRUE, otherwise return FALSE.
+     */
+    public function hExists(string $key,string $hashKey){
+        $key = $this->getKey($key);
+        return $this->redis->hExists($key,$hashKey);
+    }
+
+    /**
+     * Gets a value from the hash stored at key.
+     * If the hash table doesn't exist, or the key doesn't exist, FALSE is returned.
+     *
+     * @param string $key
+     * @param string $hashKey
+     *
+     * @return string The value, if the command executed successfully BOOL FALSE in case of failure
+     */
+    public function hGet(string $key,string $hashKey){
+        $key = $this->getKey($key);
+        return $this->redis->hGet($key,$hashKey);
+    }
+
+    /**
+     * Returns the whole hash, as an array of strings indexed by strings.
+     *
+     * @param string $key
+     *
+     * @return array An array of elements, the contents of the hash.
+     */
+    public function hGetAll(string $key){
+        $key = $this->getKey($key);
+        return $this->redis->hGetAll($key);
+    }
+
+    /**
+     * Increments the value of a member from a hash by a given amount.
+     *
+     * @param string $key
+     * @param string $hashKey
+     * @param int    $value (integer) value that will be added to the member's value
+     *
+     * @return int the new value
+     */
+    public function hIncrBy(string $key,string $hashKey, int $value){
+        $key = $this->getKey($key);
+        return $this->redis->hIncrBy($key,$hashKey,$value);
+    }
+
+    /**
+     * Increment the float value of a hash field by the given amount
+     *
+     * @param string $key
+     * @param string $hashKey
+     * @param float  $increment
+     *
+     * @return float
+     */
+    public function hIncrByFloat(string $key,string $hashKey, float $value){
+        $key = $this->getKey($key);
+        return $this->redis->hIncrByFloat($key,$hashKey,$value);
+    }
+
+    /**
+     * @param string $key
+     * @return array
+     */
+    public function hKeys(string $key){
+        $key = $this->getKey($key);
+        return $this->redis->hKeys($key);
+    }
+
+    /**
+     * Returns the length of a hash, in number of items
+     *
+     * @param string $key
+     *
+     * @return int|bool the number of items in a hash, FALSE if the key doesn't exist or isn't a hash
+     */
+    public function hLen(string $key){
+        $key = $this->getKey($key);
+        return $this->redis->hLen($key);
+    }
+
+    /**
+     * Retirieve the values associated to the specified fields in the hash.
+     *
+     * @param string $key
+     * @param array  $hashKeys
+     *
+     * @return array Array An array of elements, the values of the specified fields in the hash,
+     * with the hash keys as array keys.
+     */
+    public function hMGet(string $key,array $hashKeys){
+        $key = $this->getKey($key);
+        return $this->redis->hMGet($key,$hashKeys);
+    }
+
+    /**
+     * Fills in a whole hash. Non-string values are converted to string, using the standard (string) cast.
+     * NULL values are stored as empty strings
+     *
+     * @param string $key
+     * @param array  $hashKeys key → value array
+     *
+     * @return bool
+     */
+    public function hMSet(string $key,array $hashKeys){
+        $key = $this->getKey($key);
+        return $this->redis->hMSet($key,$hashKeys);
+    }
+
+    /**
+     * Adds a value to the hash stored at key. If this value is already in the hash, FALSE is returned.
+     *
+     * @param string $key
+     * @param string $hashKey
+     * @param string $value
+     *
+     * @return int|bool
+     * - 1 if value didn't exist and was added successfully,
+     * - 0 if the value was already present and was replaced, FALSE if there was an error.
+     */
+
+    public function hSet(string $key,string $hashKeys,string $value){
+        $key = $this->getKey($key);
+        return $this->redis->hSet($key,$hashKeys,$value);
+    }
+
+    /**
+     * Adds a value to the hash stored at key only if this field isn't already in the hash.
+     *
+     * @param string $key
+     * @param string $hashKey
+     * @param string $value
+     *
+     * @return  bool TRUE if the field was set, FALSE if it was already present.
+     */
+    public function hSetNx(string $key,string $hashKeys,string $value){
+        $key = $this->getKey($key);
+        return $this->redis->hSetNx($key,$hashKeys,$value);
+    }
+
+    /**
+     * Returns the values in a hash, as an array of strings.
+     * @param string $key
+     *
+     * @return array An array of elements, the values of the hash. This works like PHP's array_values().
+     */
+    public function hVals(string $key,string $hashKeys,string $value){
+        $key = $this->getKey($key);
+        return $this->redis->hVals($key,$hashKeys,$value);
+    }
+
+    /**
+     * Get the string length of the value associated with field in the hash stored at key
+     *
+     * @param string $key
+     * @param string $field
+     *
+     * @return int the string length of the value associated with field, or zero when field is not present in the hash
+     * or key does not exist at all.
+     * @since >= 3.2
+     */
+    public function hStrLen(string $key,string $field){
+        $key = $this->getKey($key);
+        return $this->redis->hStrLen($key,$hashKeys);
+    }
+
+    /**
+     * Is a blocking lPop primitive. If at least one of the lists contains at least one element,
+     * the element will be popped from the head of the list and returned to the caller.
+     * Il all the list identified by the keys passed in arguments are empty, blPop will block
+     * during the specified timeout until an element is pushed to one of those lists. This element will be popped.
+     *
+     * @param string|string[] $keys    String array containing the keys of the lists OR variadic list of strings
+     * @param int             $timeout Timeout is always the required final parameter
+     *
+     * @return array ['listName', 'element']
+     */
+    public function blPop(string $key,int $timeout=0){
+        $key = $this->getKey($key);
+        return $this->redis->blPop($key,$timeout);
+    }
+    public function brPop(string $key,int $timeout=0){
+        $key = $this->getKey($key);
+        return $this->redis->brPop($key,$timeout);
+    }
+    /**
+     * A blocking version of rpoplpush, with an integral timeout in the third parameter.
+     *
+     * @param string $srcKey
+     * @param string $dstKey
+     * @param int    $timeout
+     *
+     * @return  string|mixed|bool  The element that was moved in case of success, FALSE in case of timeout
+     */
+    public function bRPopLPush(string $srcKey, string $dstKey ,int $timeout=0){
+        $srcKey = $this->getKey($srcKey);
+        $dstKey = $this->getKey($dstKey);
+        return $this->redis->bRPopLPush($srcKey,$dstKey,$timeout);
+    }
+    /**
+     * Return the specified element of the list stored at the specified key.
+     * 0 the first element, 1 the second ... -1 the last element, -2 the penultimate ...
+     * Return FALSE in case of a bad index or a key that doesn't point to a list.
+     *
+     * @param string $key
+     * @param int    $index
+     *
+     * @return mixed|bool the element at this index
+     */
+    public function lIndex(string $key ,int $index){
+        $key = $this->getKey($key);
+        return $this->redis->lIndex($key,$index);
+    }
+    /**
+     * Insert value in the list before or after the pivot value. the parameter options
+     * specify the position of the insert (before or after). If the list didn't exists,
+     * or the pivot didn't exists, the value is not inserted.
+     *
+     * @param string       $key
+     * @param int          $position Redis::BEFORE | Redis::AFTER
+     * @param string       $pivot
+     * @param string|mixed $value
+     *
+     * @return int The number of the elements in the list, -1 if the pivot didn't exists.
+     */
+    public function lInsert(string $key ,int $position,string $pivot, $value){
+        $key = $this->getKey($key);
+        return $this->redis->lInsert($key,$position,$pivot,$value);
+    }
+    /**
+     * Returns the size of a list identified by Key. If the list didn't exist or is empty,
+     * the command returns 0. If the data type identified by Key is not a list, the command return FALSE.
+     *
+     * @param string $key
+     *
+     * @return int|bool The size of the list identified by Key exists.
+     * bool FALSE if the data type identified by Key is not list
+     */
+    public function lLen(string $key ){
+        $key = $this->getKey($key);
+        return $this->redis->lLen($key);
+    }
+    /**
+     * Returns and removes the first element of the list.
+     *
+     * @param   string $key
+     *
+     * @return  mixed|bool if command executed successfully BOOL FALSE in case of failure (empty list)
+     */
+    public function lPop(string $key ){
+        $key = $this->getKey($key);
+        return $this->redis->lPop($key);
+    }
+
+    /**
+     * Adds the string values to the head (left) of the list.
+     * Creates the list if the key didn't exist.
+     * If the key exists and is not a list, FALSE is returned.
+     *
+     * @param string $key
+     * @param string|mixed $value1... Variadic list of values to push in key, if dont used serialized, used string
+     *
+     * @return int|bool The new length of the list in case of success, FALSE in case of Failure
+     */
+    public function lPush(string $key,...$value ){
+        $key = $this->getKey($key);
+        return $this->redis->lPush($key,...$value);
+    }
+
+    /**
+     * Adds the string value to the head (left) of the list if the list exists.
+     *
+     * @param string $key
+     * @param string|mixed $value String, value to push in key
+     *
+     * @return int|bool The new length of the list in case of success, FALSE in case of Failure.
+     */
+    public function lPushx(string $key,$value ){
+        $key = $this->getKey($key);
+        return $this->redis->lPushx($key,$value);
+    }
+
+    /**
+     * Returns the specified elements of the list stored at the specified key in
+     * the range [start, end]. start and stop are interpretated as indices: 0 the first element,
+     * 1 the second ... -1 the last element, -2 the penultimate ...
+     *
+     * @param string $key
+     * @param int    $start
+     * @param int    $end
+     *
+     * @return array containing the values in specified range.
+     */
+    public function lRange(string $key,int $start,int $end){
+        $key = $this->getKey($key);
+        return $this->redis->lRange($key,$start,$end);
+    }
+    /**
+     * Removes the first count occurences of the value element from the list.
+     * If count is zero, all the matching elements are removed. If count is negative,
+     * elements are removed from tail to head.
+     *
+     * @param string $key
+     * @param string $value
+     * @param int    $count
+     *
+     * @return int|bool the number of elements to remove
+     * bool FALSE if the value identified by key is not a list.
+     */
+    public function lRem(string $key,string $value,int $count){
+        $key = $this->getKey($key);
+        return $this->redis->lRem($key,$value,$count);
+    }
+
+    /**
+     * Set the list at index with the new value.
+     *
+     * @param string $key
+     * @param int    $index
+     * @param string $value
+     *
+     * @return bool TRUE if the new value is setted.
+     * FALSE if the index is out of range, or data type identified by key is not a list.
+     */
+    public function lSet(string $key,int $index,string $value){
+        $key = $this->getKey($key);
+        return $this->redis->lSet($key,$index,$value);
+    }
+    /**
+     * Trims an existing list so that it will contain only a specified range of elements.
+     *
+     * @param string $key
+     * @param int    $start
+     * @param int    $stop
+     *
+     * @return array|bool Bool return FALSE if the key identify a non-list value
+     */
+    public function lTrim(string $key,int $start,int $stop){
+        $key = $this->getKey($key);
+        return $this->redis->lTrim($key,$start,$stop);
+    }
+    public function rPop(string $key){
+        $key = $this->getKey($key);
+        return $this->redis->rPop($key);
+    }
+    public function rPopLPush(string $srcKey, string $dstKey){
+        $srcKey = $this->getKey($srcKey);
+        $dstKey = $this->getKey($dstKey);
+        return $this->redis->rPopLPush($srcKey, $dstKey);
+    }
+    public function rPush(string $key, ...$value1){
+        $key = $this->getKey($key);
+        return $this->redis->rPush($key, ...$value1);
+    }
+    public function rPushx(string $key, $value){
+        $key = $this->getKey($key);
+        return $this->redis->rPushx($key, $value);
+    }
+
+    /**
+     * Adds a values to the set value stored at key.
+     *
+     * @param string       $key       Required key
+     * @param string|mixed ...$value1 Variadic list of values
+     *
+     * @return int|bool The number of elements added to the set.
+     * If this value is already in the set, FALSE is returned
+     */
+    public function sAdd(string $key, ...$value){
+        $key = $this->getKey($key);
+        return $this->redis->sAdd($key, ...$value);
+    }
+    /**
+     * Returns the cardinality of the set identified by key.
+     *
+     * @param string $key
+     *
+     * @return int the cardinality of the set identified by key, 0 if the set doesn't exist.
+     */
+    public function sCard(string $key){
+        $key = $this->getKey($key);
+        return $this->redis->sCard($key);
+    }
+
+
+    /**
+     * Performs the difference between N sets and returns it.
+     *
+     * @param string $key1         first key for diff
+     * @param string ...$otherKeys variadic list of keys corresponding to sets in redis
+     *
+     * @return array string[] The difference of the first set will all the others
+     */
+    public function sDiff(string $key, ...$otherKeys){
+        $key = $this->getKey($key);
+        return $this->redis->sDiff($key,...$otherKeys);
+    }
+
+    /**
+     * Performs the same action as sDiff, but stores the result in the first key
+     *
+     * @param string $dstKey       the key to store the diff into.
+     * @param string $key1         first key for diff
+     * @param string ...$otherKeys variadic list of keys corresponding to sets in redis
+     *
+     * @return int|bool The cardinality of the resulting set, or FALSE in case of a missing key
+
+     */
+    public function sDiffStore(string $dstKey, string $key1, ...$otherKeys){
+        $dstKey = $this->getKey($dstKey);
+        $key1 = $this->getKey($key1);
+        return $this->redis->sDiffStore($dstKey, $key1, ...$otherKeys);
+    }
+    /**
+     * Returns the members of a set resulting from the intersection of all the sets
+     * held at the specified keys. If just a single key is specified, then this command
+     * produces the members of this set. If one of the keys is missing, FALSE is returned.
+     *
+     * @param string $key1         keys identifying the different sets on which we will apply the intersection.
+     * @param string ...$otherKeys variadic list of keys
+     *
+     * @return array contain the result of the intersection between those keys
+     * If the intersection between the different sets is empty, the return value will be empty array.
+     */
+    public function sInter(string $key1, ...$otherKeys){
+        $key1 = $this->getKey($key1);
+        return $this->redis->sInter($key1, ...$otherKeys);
+    }
+    public function sInterStore(string $dstKey, string $key1, ...$otherKeys){
+        $dstKey = $this->getKey($dstKey);
+        $key1 = $this->getKey($key1);
+        return $this->redis->sInterStore($dstKey, $key1, ...$otherKeys);
+    }
+
+    /**
+     * Checks if value is a member of the set stored at the key key.
+     *
+     * @param string       $key
+     * @param string|mixed $value
+     *
+     * @return bool TRUE if value is a member of the set at key key, FALSE otherwise
+     */
+    public function sIsMember(string $key, $value){
+        $key = $this->getKey($key);
+        return $this->redis->sIsMember($key, $value);
+    }
+
+    /**
+     * Returns the contents of a set.
+     *
+     * @param string $key
+     *
+     * @return array An array of elements, the contents of the set
+     */
+    public function sMembers(string $keys){
+        $key = $this->getKey($key);
+        return $this->redis->sMembers($key);
+    }
+
+    /**
+     * Moves the specified member from the set at srcKey to the set at dstKey.
+     *
+     * @param string       $srcKey
+     * @param string       $dstKey
+     * @param string|mixed $member
+     *
+     * @return bool If the operation is successful, return TRUE.
+     * If the srcKey and/or dstKey didn't exist, and/or the member didn't exist in srcKey, FALSE is returned.
+     */
+    public function sMove(string $srcKey,string $dstKey, $member){
+        $srcKey = $this->getKey($srcKey);
+        $dstKey = $this->getKey($dstKey);
+        return $this->redis->sMove($srcKey,$dstKey,$member);
+    }
+    /**
+     * Removes and returns a random element from the set value at Key.
+     *
+     * @param string $key
+     * @param int    $count [optional]
+     *
+     * @return string|mixed|array|bool "popped" values
+     * bool FALSE if set identified by key is empty or doesn't exist.
+     */
+    public function sPop(string $key,int $count=1 ){
+        $key = $this->getKey($key);
+        return $this->redis->sPop($key,$count);
+    }
+
+    /**
+     * Returns a random element(s) from the set value at Key, without removing it.
+     *
+     * @param string $key
+     * @param int    $count [optional]
+     *
+     * @return string|mixed|array|bool value(s) from the set
+     * bool FALSE if set identified by key is empty or doesn't exist and count argument isn't passed.
+     */
+    public function sRandMember(string $key,int $count=1 ){
+        $key = $this->getKey($key);
+        return $this->redis->sRandMember($key,$count);
+    }
+    /**
+     * Removes the specified members from the set value stored at key.
+     *
+     * @param   string       $key
+     * @param   string|mixed ...$member1 Variadic list of members
+     *
+     * @return int The number of elements removed from the set
+     */
+    public function sRem(string $key,...$member1){
+        $key = $this->getKey($key);
+        return $this->redis->sRem($key,...$member1);
+    }
+
+    /**
+     * Performs the union between N sets and returns it.
+     *
+     * @param string $key1         first key for union
+     * @param string ...$otherKeys variadic list of keys corresponding to sets in redis
+     *
+     * @return array string[] The union of all these sets
+     */
+    public function sUnion(string $key,...$otherKeys){
+        $key = $this->getKey($key);
+        return $this->redis->sUnion($key,...$otherKeys);
+    }
+
+    public function sUnionStore(string $dstKey, string $key1, ...$otherKeys){
+        $dstKey = $this->getKey($dstKey);
+        $key1 = $this->getKey($key1);
+        return $this->redis->sUnionStore($dstKey, $key1, ...$otherKeys);
+    }
+
+    /**
+     * Block until Redis can pop the highest or lowest scoring members from one or more ZSETs.
+     * There are two commands (BZPOPMIN and BZPOPMAX for popping the lowest and highest scoring elements respectively.)
+     *
+     * @param string|array $key1
+     * @param string|array $key2 ...
+     * @param int $timeout
+     *
+     * @return array Either an array with the key member and score of the higest or lowest element or an empty array
+     * if the timeout was reached without an element to pop.
+     *
+     * @since >= 5.0
+     */
+    public function bzPopMax($key1,$key2, int $timeout ){
+        if(is_string($key1)){
+            $key1 = $this->getKey($key1);
         }
-        $v = $this->member_array(array(
-            $key
-        ), $value);
-        return call_user_func_array(array(
-            $this->_redis,
-            "sRem"
-        ), $v);
-    }
-
-    public function sScan($key, $pattern = "*")
-    {
-        $ret = array();
-        if (!$key || !$this->_redis) {
-            return FALSE;
+        if(is_string($key2)){
+            $key2 = $this->getKey($key2);
         }
-        $it = NULL;
-        while ($arr_mems = $this->_redis->sscan($key, $it, $pattern)) {
-            foreach ($arr_mems as $v) {
-                $ret[] = $v;
-            }
+        return $this->redis->bzPopMax($key1, $key2,$timeout);
+    }
+    public function bzPopMin($key1,$key2, int $timeout ){
+        if(is_string($key1)){
+            $key1 = $this->getKey($key1);
         }
-    }
-
-    public function zScore($key, $value)
-    {
-        if (!$key || !$value || !$this->_redis) {
-            return FALSE;
+        if(is_string($key2)){
+            $key2 = $this->getKey($key2);
         }
-        return $this->_redis->zScore($key, $value);
+        return $this->redis->bzPopMin($key1, $key2,$timeout);
     }
 
-    // 有序集合
-    public function zAdd($key, $sort = 1, $value)
+    /**
+     * Adds the specified member with a given score to the sorted set stored at key
+     *
+     * @param string       $key     Required key
+     * @param array        $options Options if needed
+     * @param float        $score1  Required score
+     * @param string|mixed $value1  Required value
+     * @param float        $score2  Optional score
+     * @param string|mixed $value2  Optional value
+     * @param float        $scoreN  Optional score
+     * @param string|mixed $valueN  Optional value
+     *
+     * @return int Number of values added
+     */
+    public function zAdd(string $key, $options, float $score1, $value1, float $score2 = null, $value2 = null,
+                         float $scoreN = null, $valueN = null)
     {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->zAdd($key, $sort, $value);
+        $key = $this->getKey($key);
+        return $this->redis->zAdd( $key,  $options,  $score1, $value1,  $score2 = null, $value2 = null,
+            $scoreN = null, $valueN = null);
+    }
+    /**
+     * Returns the cardinality of an ordered set.
+     *
+     * @param string $key
+     *
+     * @return int the set's cardinality
+     */
+    public function zCard(string $key ){
+        $key = $this->getKey($key);
+        return $this->redis->zCard($key);
     }
 
-    public function zRem($key, $value)
-    {
-        if (!$key || !$this->_redis) {
-            return FALSE;
-        }
-        return $this->_redis->zRem($key, $value);
+    /**
+     * Returns the number of elements of the sorted set stored at the specified key which have
+     * scores in the range [start,end]. Adding a parenthesis before start or end excludes it
+     * from the range. +inf and -inf are also valid limits.
+     *
+     * @param string $key
+     * @param string $start
+     * @param string $end
+     *
+     * @return int the size of a corresponding zRangeByScore
+     */
+    public function zCount(string $key ,string $start,string $end){
+        $key = $this->getKey($key);
+        return $this->redis->zCount($key,$start,$end);
     }
 
-    private function member_array($v_header, $v_main)
-    {
-        return array_filter(array_merge($v_header, (array)$v_main));
+
+    /**
+     * Increments the score of a member from a sorted set by a given amount.
+     *
+     * @param string $key
+     * @param float  $value (double) value that will be added to the member's score
+     * @param string $member
+     *
+     * @return float the new value
+     */
+    public function zIncrBy(string $key ,float $value,string $member){
+        $key = $this->getKey($key);
+        return $this->redis->zIncrBy($key,$value,$member);
     }
 
-    public function close()
-    {
-        $this->_redis->close();
+    /**
+     * Creates an intersection of sorted sets given in second argument.
+     * The result of the union will be stored in the sorted set defined by the first argument.
+     * The third optional argument defines weights to apply to the sorted sets in input.
+     * In this case, the weights will be multiplied by the score of each element in the sorted set
+     * before applying the aggregation. The forth argument defines the AGGREGATE option which
+     * specify how the results of the union are aggregated.
+     *
+     * @param string $output
+     * @param array  $zSetKeys
+     * @param array  $weights
+     * @param string $aggregateFunction Either "SUM", "MIN", or "MAX":
+     * defines the behaviour to use on duplicate entries during the zInterStore.
+     *
+     * @return int The number of values in the new sorted set.
+     */
+    public function zInterStore(string $output ,array $zSetKeys,array $weights=null,string $aggregateFunction='SUM'){
+        $output = $this->getKey($output);
+        return $this->redis->zInterStore($output,$zSetKeys,$weights,$aggregateFunction);
     }
 
-    public function __destruct()
-    {
-        if ($this->_redis) {
-            $this->close();
-        }
+    /**
+     * Can pop the highest scoring members from one ZSET.
+     *
+     * @param string $key
+     * @param int $count
+     *
+     * @return array Either an array with the key member and score of the highest element or an empty array
+     * if there is no element to pop.
+     *
+     * @since >= 5.0
+     */
+    public function zPopMax(string $key ,int $count=1){
+        $key = $this->getKey($key);
+        return $this->redis->zPopMax($key,$count);
+    }
+    public function zPopMin(string $key ,int $count=1){
+        $key = $this->getKey($key);
+        return $this->redis->zPopMin($key,$count);
     }
 
+    /**
+     * Returns a range of elements from the ordered set stored at the specified key,
+     * with values in the range [start, end]. start and stop are interpreted as zero-based indices:
+     * 0 the first element,
+     * 1 the second ...
+     * -1 the last element,
+     * -2 the penultimate ...
+     *
+     * @param string $key
+     * @param int    $start
+     * @param int    $end
+     * @param bool   $withscores
+     *
+     * @return array Array containing the values in specified range.
+     */
+    public function zRange(string $key ,int $start,int $end, bool $withscores=null){
+        $key = $this->getKey($key);
+        return $this->redis->zRange($key , $start, $end, $withscores);
+    }
+    /**
+     * Returns the elements of the sorted set stored at the specified key which have scores in the
+     * range [start,end]. Adding a parenthesis before start or end excludes it from the range.
+     * +inf and -inf are also valid limits.
+     *
+     * zRevRangeByScore returns the same items in reverse order, when the start and end parameters are swapped.
+     *
+     * @param string $key
+     * @param int    $start
+     * @param int    $end
+     * @param array  $options Two options are available:
+     *  - withscores => TRUE,
+     *  - and limit => array($offset, $count)
+     *
+     * @return array Array containing the values in specified range.
+     */
+    public function zRangeByScore(string $key ,int $start,int $end, array $options=[]){
+        $key = $this->getKey($key);
+        return $this->redis->zRangeByScore($key , $start, $end, $options);
+    }
+
+    /**
+     * Returns a lexigraphical range of members in a sorted set, assuming the members have the same score. The
+     * min and max values are required to start with '(' (exclusive), '[' (inclusive), or be exactly the values
+     * '-' (negative inf) or '+' (positive inf).  The command must be called with either three *or* five
+     * arguments or will return FALSE.
+     *
+     * @param string $key    The ZSET you wish to run against.
+     * @param int    $min    The minimum alphanumeric value you wish to get.
+     * @param int    $max    The maximum alphanumeric value you wish to get.
+     * @param int    $offset Optional argument if you wish to start somewhere other than the first element.
+     * @param int    $limit  Optional argument if you wish to limit the number of elements returned.
+     *
+     * @return array|bool Array containing the values in the specified range.
+     */
+    public function zRangeByLex(string $key, $min, $max, $offset = null, $limit = null){
+        $key = $this->getKey($key);
+        return $this->redis->zRangeByLex($key, $min, $max, $offset, $limit);
+    }
+
+    /**
+     * Returns the rank of a given member in the specified sorted set, starting at 0 for the item
+     * with the smallest score. zRevRank starts at 0 for the item with the largest score.
+     *
+     * @param string       $key
+     * @param string|mixed $member
+     *
+     * @return int|bool the item's score, or false if key or member is not exists
+     *
+     * @link    https://redis.io/commands/zrank
+     * @example
+     * <pre>
+     * $redis->del('z');
+     * $redis->zAdd('key', 1, 'one');
+     * $redis->zAdd('key', 2, 'two');
+     * $redis->zRank('key', 'one');     // 0
+     * $redis->zRank('key', 'two');     // 1
+     * $redis->zRevRank('key', 'one');  // 1
+     * $redis->zRevRank('key', 'two');  // 0
+     * </pre>
+     */
+    public function zRank(string $key, $member){
+        $key = $this->getKey($key);
+        return $this->redis->zRank($key, $membert);
+    }
+    public function zRevRank(string $key, $member){
+        $key = $this->getKey($key);
+        return $this->redis->zRevRank($key, $membert);
+    }
+
+    /**
+     * Deletes a specified member from the ordered set.
+     *
+     * @param string       $key
+     * @param string|mixed $member1
+     * @param string|mixed ...$otherMembers
+     *
+     * @return int Number of deleted values
+     */
+    public function zRem(string $key, $member1, ...$otherMembers){
+        $key = $this->getKey($key);
+        return $this->redis->zRem($key, $member1, ...$otherMembers);
+    }
+    /**
+     * Deletes the elements of the sorted set stored at the specified key which have rank in the range [start,end].
+     *
+     * @param string $key
+     * @param int    $start
+     * @param int    $end
+     *
+     * @return int The number of values deleted from the sorted set
+     */
+    public function zRemRangeByRank(string $key, int $start , int $end  ){
+        $key = $this->getKey($key);
+        return $this->redis->zRemRangeByRank($key, $start, $end);
+    }
+
+    /**
+     * Deletes the elements of the sorted set stored at the specified key which have scores in the range [start,end].
+     *
+     * @param string       $key
+     * @param float|string $start double or "+inf" or "-inf" string
+     * @param float|string $end double or "+inf" or "-inf" string
+     *
+     * @return int The number of values deleted from the sorted set
+     */
+    public function zRemRangeByScore(string $key, $start , $end  ){
+        $key = $this->getKey($key);
+        return $this->redis->zRemRangeByScore($key, $start, $end);
+    }
+
+    /**
+     * Returns the elements of the sorted set stored at the specified key in the range [start, end]
+     * in reverse order. start and stop are interpretated as zero-based indices:
+     * 0 the first element,
+     * 1 the second ...
+     * -1 the last element,
+     * -2 the penultimate ...
+     *
+     * @param string $key
+     * @param int    $start
+     * @param int    $end
+     * @param bool   $withscore
+     *
+     * @return array Array containing the values in specified range.
+     */
+    public function zRevRange(string $key, int $start , int $end, $withscore=null  ){
+        $key = $this->getKey($key);
+        return $this->redis->zRevRange($key, $start, $end,$withscore);
+    }
+    /**
+     * Returns the score of a given member in the specified sorted set.
+     *
+     * @param string       $key
+     * @param string|mixed $member
+     *
+     * @return float|bool false if member or key not exists
+     */
+
+    public function zScore(string $key,$member  ){
+        $key = $this->getKey($key);
+        return $this->redis->zScore($key, $member);
+    }
+
+    /**
+     * Creates an union of sorted sets given in second argument.
+     * The result of the union will be stored in the sorted set defined by the first argument.
+     * The third optionnel argument defines weights to apply to the sorted sets in input.
+     * In this case, the weights will be multiplied by the score of each element in the sorted set
+     * before applying the aggregation. The forth argument defines the AGGREGATE option which
+     * specify how the results of the union are aggregated.
+     *
+     * @param string $output
+     * @param array  $zSetKeys
+     * @param array  $weights
+     * @param string $aggregateFunction  Either "SUM", "MIN", or "MAX": defines the behaviour to use on
+     * duplicate entries during the zUnionStore
+     *
+     * @return int The number of values in the new sorted set
+     */
+    public function zUnionStore(string $output, $zSetKeys, array $weights = null, $aggregateFunction = 'SUM' ){
+        $output = $this->getKey($output);
+        return $this->redis->zUnionStore( $output, $zSetKeys, $weights, $aggregateFunction);
+    }
 
 }
