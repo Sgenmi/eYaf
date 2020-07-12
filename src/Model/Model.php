@@ -47,7 +47,7 @@ abstract class Model implements ModelInface
     public function checkField($data, $field = [])
     {
         if(!$data){
-            return '请求参数有误';
+            return "请求参数为空";
         }
         if (! $field) {
             $field = array_keys($data);
@@ -145,6 +145,21 @@ abstract class Model implements ModelInface
                         if (!strtotime($v)) {
                             $ret = $fv[1];
                         }
+                        break;
+                    case 'array':
+                        if (is_string($fv)) {
+                            $fv = [
+                                true,
+                                $fv
+                            ];
+                        }
+                        if($fv[0]){
+                            if(!is_array($v)){
+                                $ret = $fv[1];
+                            }
+                        }
+                        break;
+
                 }
                 if ($ret !== true) {
                     return $ret;
@@ -153,7 +168,7 @@ abstract class Model implements ModelInface
         }
 
         if ($ret == true && $check_field) {
-            $ret = "请求参数有误";
+            $ret = "参数不全";
         }
 
         return $ret;

@@ -3,3 +3,5 @@
 config.ini
 .idea
 .DS_Store
+vendor
+composer.lock

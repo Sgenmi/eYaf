@@ -1,4 +1,11 @@
 <?php
+/**
+ * Created by IntelliJ IDEA.
+ * User: root
+ * Date: 18-5-3
+ * Time: 下午8:14
+ */
+namespace Sgenmi\eYaf\Utility;
 
 /**
  * 过滤类
@@ -8,9 +15,6 @@
  * @package SwooleSystem
  * @subpackage request_filter
  */
-
-namespace Sgenmi\eYaf\Utility;
-
 class Filter
 {
 
@@ -207,7 +211,9 @@ class Filter
         // HTML转义
         $string = htmlspecialchars($string, ENT_QUOTES, 'UTF-8');
         // 启用了magic_quotes
-
+        if (! get_magic_quotes_gpc()) {
+            $string = addslashes($string);
+        }
         return $string;
     }
 }

@@ -21,7 +21,7 @@ class Bootstrap extends \Yaf\Bootstrap_Abstract
     {
         if (defined('DEVELOPMENT') && DEVELOPMENT) {
             ini_set('display_errors', 'On');
-            error_reporting(E_ALL & ~ E_NOTICE);
+            error_reporting(E_ALL);
         } else {
             error_reporting(0);
             ini_set('display_errors', 'Off');
