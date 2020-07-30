@@ -1070,12 +1070,10 @@ class Redis {
      *
      * @return int Number of values added
      */
-    public function zAdd(string $key, $options, float $score1, $value1, float $score2 = null, $value2 = null,
-                         float $scoreN = null, $valueN = null)
+    public function zAdd(string $key,  $score1, $value1)
     {
         $key = $this->getKey($key);
-        return $this->redis->zAdd( $key,  $options,  $score1, $value1,  $score2 = null, $value2 = null,
-            $scoreN = null, $valueN = null);
+        return $this->redis->zAdd( $key, $score1, $value1);
     }
     /**
      * Returns the cardinality of an ordered set.
