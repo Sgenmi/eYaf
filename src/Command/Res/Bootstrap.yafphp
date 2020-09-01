@@ -1,0 +1,23 @@
+<?php
+
+/**
+ * Created by IntelliJ IDEA.
+ * Author: sgenmi
+ * Date: 2020/9/1 下午1:36
+ * Email: 150560159@qq.com
+ */
+
+namespace Model;
+
+require BASE_PATH."/vendor/sgenmi/eyaf/src/Bootstrap.php";
+
+class Bootstrap extends \Sgenmi\eyaf\Bootstrap
+{
+    public function _initBootstrap()
+    {
+        $this->_config = Yaf\Application::app()->getConfig();
+        Yaf\Registry::set('_config', $this->_config);
+    }
+
+
+}
