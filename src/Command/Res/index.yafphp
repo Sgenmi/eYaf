@@ -1,25 +1,13 @@
 <?php
 
-/**
- * Created by IntelliJ IDEA.
- * Author: sgenmi
- * Date: 2020/3/23 下午6:23
- * Email: 150560159@qq.com
- */
-
-//开发模式
- define('DEVELOPMENT', true);
-
  ini_set('yaf.name_suffix', 0);
- ini_set('yaf.name_separator', '_');
+ ini_set('yaf.name_separator', '\\');
  define("BASE_PATH", dirname(__DIR__));
- define("APP_PATH", BASE_PATH . '/app');
+ define("APP_PATH", BASE_PATH . '/application');
  define("LOG_PATH", APP_PATH . "/log");
-
  //默认token模式 开发纯api时使用，设置为false ,则为session模式
  define("IS_TOKEN", true);
  //默认禁用Yaf 默认渲染模板，
  define("IS_DISABLE_VIEW", true);
-
  $app = new \Yaf\Application(APP_PATH . "/conf/config.ini");
  $app->bootstrap()->run();
