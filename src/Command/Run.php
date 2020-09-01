@@ -3,6 +3,8 @@
 
 namespace Sgenmi\eYaf\Command;
 
+use Sgenmi\eYaf\Command\Action\Install;
+
 class Run
 {
     private static $instance;
@@ -19,7 +21,15 @@ class Run
 
     }
     public function exec($args){
-
+        $execAction = implode('_',$args);
+        switch ($execAction){
+            case 'install' || 'install_init':
+                (new Install())->init();
+                break;
+            case 'install_rbac':
+                (new Install())->rbac();
+                break;
+        }
     }
 
 }

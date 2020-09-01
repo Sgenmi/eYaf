@@ -1,0 +1,46 @@
+<?php
+
+/**
+ * Created by IntelliJ IDEA.
+ * Author: sgenmi
+ * Date: 2020/9/1 下午12:03
+ * Email: 150560159@qq.com
+ */
+
+namespace Model;
+
+use Sgenmi\eYaf\Model\Model;
+
+class User extends Model
+{
+    public $table = 'user';
+
+    protected $check_rule = [
+        'id' => [
+            'required' => [true, "用户id不正确"],
+            'integer' => [true, "用户id格式不正确，只能为整数数字"]
+        ],
+        'status' => [
+            'in' => [[0, 1], "非法的用户状态"]
+        ],
+        'username' => [
+            'required' => [true, "用户名称不正确,请填写手机号"],
+            'rang' => [[11, 30], "用户名称11~30个字符"]
+        ],
+        'password' => [
+            'required' => [true, "用户密码不正确"],
+            'rang' => [[6, 30], "用户密码11~30个字符"]
+        ],
+    ];
+
+    public function getUserInfo(int $id){
+        return $id;
+//        $where=[
+//            'AND'=>[
+//                'id'=>$id
+//            ]
+//        ];
+//       return $this->get('*',$where);
+    }
+
+}
