@@ -16,8 +16,11 @@
     * 在php.ini中增加如下代码
  ```php
      extension=yaf.so
-     yaf.use_namespace=1
+     ;PHP_INI_SYSTEM php.ini	
+     yaf.use_namespace=1  
+     ;ini_set, php.ini
      yaf.name_suffix=0
+     yaf.use_spl_autoload=1
      yaf.name_separator=\;
 ```
 
