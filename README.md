@@ -26,6 +26,7 @@
 
 * 初始化项目
 ```php
+    composer require sgenmi/eyaf
     php vendor/bin/eyaf install
 ```
  
