@@ -12,12 +12,23 @@ namespace Controller;
 use Sgenmi\eYaf\Http\Controller;
 
 use Model\User;
+use Repository\IndexRepository;
 
 class Index extends Controller{
 
+    /**
+     * @var IndexRepository
+     */
+    private $indexRepo;
+
+    public function init(){
+        parent::init();
+        $this->indexRepo = new IndexRepository();
+    }
+
     //方法 xxxAction()
     public function indexAction(){
-        phpinfo();
+       echo $this->indexRepo->getStr();
     }
 
     // /index/userinfo
