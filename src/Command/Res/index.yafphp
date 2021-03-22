@@ -2,6 +2,7 @@
 
  ini_set('yaf.name_suffix', 0);
  ini_set('yaf.name_separator', '\\');
+ ini_set('yaf.use_spl_autoload', 1);
  define("BASE_PATH", dirname(__DIR__));
  define("APP_PATH", BASE_PATH . '/application');
  define("LOG_PATH", APP_PATH . "/log");
