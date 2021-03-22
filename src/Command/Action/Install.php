@@ -36,7 +36,8 @@ class Install
             'application/models'=>'UserModel.yafphp',
             'application/modules'=>'.gitkeep',
             'application/plugins'=>'.gitkeep',
-            'application/services'=>'.gitkeep',
+            'application/repositorys'=>'IndexRepository.yafphp',
+            'application/services'=>'IndexService.yafphp',
             'public'=>'index.yafphp',
         ];
         $resPath = __DIR__."/../Res";
@@ -62,6 +63,9 @@ class Install
 config.ini
 .buildpath
 upload
+application/log/*.log
+composer.lock
+vendor
 EOF;
         file_put_contents(APP_ROOT.DIRECTORY_SEPARATOR.'.gitignore',$gitignore);
 
