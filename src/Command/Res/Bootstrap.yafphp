@@ -7,16 +7,16 @@
  * Email: 150560159@qq.com
  */
 
-namespace Model;
-
 require BASE_PATH."/vendor/sgenmi/eyaf/src/Bootstrap.php";
 
 class Bootstrap extends \Sgenmi\eyaf\Bootstrap
 {
-    public function _initBootstrap()
+    public function _initCommon()
     {
-        $this->_config = Yaf\Application::app()->getConfig();
-        Yaf\Registry::set('_config', $this->_config);
+        \Yaf\Loader::import('Funs.php');
+        $loader = \Yaf\Loader::getInstance(APP_PATH.'/library');
+        $loader->registerNamespace("\Service", APP_PATH."/services/");
+        $loader->registerNamespace("\Repository",APP_PATH."/repositorys/");
     }
 
 
