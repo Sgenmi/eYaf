@@ -8,7 +8,11 @@
  define("LOG_PATH", APP_PATH . "/log");
  //默认token模式 开发纯api时使用，设置为false ,则为session模式
  define("IS_TOKEN", true);
- //默认禁用Yaf 默认渲染模板，
+ //禁用Yaf默认渲染模板，
+ //Disable Yaf's default rendering template
  define("IS_DISABLE_VIEW", true);
+ //开发模式，线上请改为false
+ //Development mode, please change to false online
+ define('DEVELOPMENT',true)
  $app = new \Yaf\Application(APP_PATH . "/conf/config.ini");
  $app->bootstrap()->run();
