@@ -44,7 +44,6 @@ class Token
      */
     public static function getToken()
     {
-        自定义名称
         $headerToken= "TOKEN";
         if(defined('HEADER_TOKEN') && HEADER_TOKEN ){
             $headerToken = HEADER_TOKEN;
