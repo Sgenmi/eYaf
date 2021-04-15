@@ -11,7 +11,7 @@ use Sgenmi\eYaf\Cache\Redis;
 
 class Token
 {
-    const USER_TOKEN ='s:u:token:';
+    const USER_TOKEN ='k:u:token:';
     const USER_ID_SET = 'z:uid:token:';
 
     /**
@@ -39,9 +39,17 @@ class Token
         return $info;
     }
 
+    /**
+     * @return mixed
+     */
     public static function getToken()
     {
-        return (new \Yaf\Request\Http())->getServer("HTTP_TOKEN", '');
+        自定义名称
+        $headerToken= "TOKEN";
+        if(defined('HEADER_TOKEN') && HEADER_TOKEN ){
+            $headerToken = HEADER_TOKEN;
+        }
+        return (new \Yaf\Request\Http())->getServer("HTTP_".strtoupper($headerToken), '');
     }
 
     /**
@@ -66,6 +74,27 @@ class Token
         return $info['group_id']??0;
     }
 
+
+    /**
+     * @param string $token
+     * @param array $data
+     * @param int $expire
+     * @param string $key
+     * @return bool
+     */
+    public static function setToken(string $token, array $data, int $expire=864000, string $key='admin'):bool {
+
+        if(isset($data['id'])){
+            throw new \Yaf\Exception('setToken: No id field was found in the data array');
+        }
+        if(empty($data['id'])){
+            throw new \Yaf\Exception('setToken: Id field cannot be empty');
+        }
+        $redis = new Redis();
+        $redis->set(self::USER_TOKEN .$key.':'.$token, json_encode($data), $expire);
+        $redis->zAdd(self::USER_ID_SET.$key.':'.$data['id'],1,$token);
+        return true;
+    }
 
     /**
      * @param int $uid
