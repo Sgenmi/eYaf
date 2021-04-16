@@ -83,7 +83,7 @@ class Token
      */
     public static function setToken(string $token, array $data, int $expire=864000, string $key='admin'):bool {
 
-        if(isset($data['id'])){
+        if(!isset($data['id'])){
             throw new \Yaf\Exception('setToken: No id field was found in the data array');
         }
         if(empty($data['id'])){

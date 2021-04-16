@@ -6,13 +6,24 @@
  define("BASE_PATH", dirname(__DIR__));
  define("APP_PATH", BASE_PATH . '/application');
  define("LOG_PATH", APP_PATH . "/log");
- //默认token模式 开发纯api时使用，设置为false ,则为session模式
- define("IS_TOKEN", true);
- //禁用Yaf默认渲染模板，
- //Disable Yaf's default rendering template
+
+/**
+ * 禁用Yaf默认渲染模板，
+ * Disable Yaf's default rendering template
+ */
  define("IS_DISABLE_VIEW", true);
- //开发模式，线上请改为false
- //Development mode, please change to false online
- define('DEVELOPMENT',true)
+
+/**
+ * 开发模式，线上请改为false
+ *  Development mode, please change to false online
+ */
+ define("DEVELOPMENT",true);
+
+ /**
+  * 自定义 header中token对应key值
+  * The corresponding key value of the token in the custom header
+  */
+ // define('HEADER_TOKEN','token');
+
  $app = new \Yaf\Application(APP_PATH . "/conf/config.ini");
  $app->bootstrap()->run();
