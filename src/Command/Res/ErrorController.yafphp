@@ -1,0 +1,29 @@
+<?php
+
+/**
+ * Created by IntelliJ IDEA.
+ * Author: sgenmi
+ * Date: 2021/5/12 上午10:44
+ * Email: 150560159@qq.com
+ */
+
+namespace Controller;
+
+
+class Error extends \Web
+{
+    public function errorAction(\Throwable $exception){
+        $message = $exception->getMessage();
+        $code = $exception->getCode();
+        if(defined('DEVELOPMENT') && !DEVELOPMENT){
+            \Log::error($message,'系统异常',true,'SYSTEM_ERROR');
+            return $this->Json($code,'system error');
+        }
+        if($code!=-1){
+            $code++;
+        }
+        return $this->Json($code,$message);
+    }
+
+
+}

@@ -31,14 +31,14 @@ class Install
         $dirs=[
             'application'=>'Bootstrap.yafphp',
             'application/conf'=>'config.ini',
-            'application/controllers'=>'IndexController.yafphp',
+            'application/controllers'=>['IndexController.yafphp','ErrorController.yafphp'],
             'application/library'=>'Funs.yafphp',
             'application/models'=>'UserModel.yafphp',
             'application/modules'=>'.gitkeep',
             'application/plugins'=>'.gitkeep',
             'application/repositorys'=>'IndexRepository.yafphp',
             'application/services'=>'IndexService.yafphp',
-            'public'=>'index.yafphp',
+            'public'=>'index.yafphp'
         ];
         $resPath = __DIR__."/../Res";
         foreach ($dirs as $k=>$v){
@@ -48,12 +48,21 @@ class Install
                 continue;
             }
             if(mkdir($dir,0755,true)){
-                if($v=='.gitkeep'){
-                    $getContent='';
-                }else{
-                    $getContent = file_get_contents($resPath.DIRECTORY_SEPARATOR.$v);
+                $v=(array) $v;
+                foreach ($v as $vv){
+                    if($vv=='.gitkeep'){
+                        $getContent='';
+                    }else{
+                        $getContent = file_get_contents($resPath.DIRECTORY_SEPARATOR.$vv);
+                    }
+                    file_put_contents($dir.DIRECTORY_SEPARATOR.str_replace(['Controller','Model'],'',str_replace('.yafphp','.php',$vv)),$getContent);
+                    if($vv=='config.ini'){
+                        file_put_contents($dir.DIRECTORY_SEPARATOR.$vv.'.bak',$getContent);
+                    }
+                    if($vv=='index.yafphp'){
+                        file_put_contents($dir.DIRECTORY_SEPARATOR.str_replace('.yafphp','.php',$vv).'.bak',$getContent);
+                    }
                 }
-                file_put_contents($dir.DIRECTORY_SEPARATOR.str_replace(['Controller','Model'],'',str_replace('.yafphp','.php',$v)),$getContent);
             }
         }
         $gitignore=<<<EOF
@@ -66,6 +75,7 @@ upload
 application/log/*.log
 composer.lock
 vendor
+public/index.php
 EOF;
         file_put_contents(APP_ROOT.DIRECTORY_SEPARATOR.'.gitignore',$gitignore);
 
