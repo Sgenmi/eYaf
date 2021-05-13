@@ -54,14 +54,19 @@ class Bootstrap extends \Yaf\Bootstrap_Abstract
     public function _initDB()
     {
         try {
-            \Yaf\Registry::set('_masterDB', new \Medoo\Medoo($this->getDBConfig(true)));
+            $config = $this->getDBConfig(true);
+            if($config){
+                \Yaf\Registry::set('_masterDB', new \Medoo\Medoo($config));
+            }
         }catch (\PDOException $e){
             echo '_masterDB:'.$e->getMessage().PHP_EOL;
             exit;
         }
-
         try {
-            \Yaf\Registry::set('_slaveDB', new \Medoo\Medoo($this->getDBConfig(false)));
+            $config = $this->getDBConfig(false);
+            if($config){
+                \Yaf\Registry::set('_slaveDB', new \Medoo\Medoo($config));
+            }
         }catch (\PDOException $e){
             echo '_slaveDB:'.$e->getMessage().PHP_EOL;
             exit;

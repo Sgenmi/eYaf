@@ -69,7 +69,7 @@ class Install
 .idea
 .DS_Store
 .project
-config.ini
+application/conf/config.ini
 .buildpath
 upload
 application/log/*.log
