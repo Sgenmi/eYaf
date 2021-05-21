@@ -282,7 +282,7 @@ abstract class Model implements ModelInface
 
     public function error()
     {
-        return $this->writeDB->error();
+        return $this->writeDB->error;
     }
 
     public function last()
@@ -305,5 +305,17 @@ abstract class Model implements ModelInface
         return $this->writeDB->raw($string, $map);
     }
 
+    public function beginDebug(){
+        return $this->writeDB->beginDebug();
+    }
+
+    public function debugLog(){
+        return $this->writeDB->debugLog();
+    }
+
+    public function errorInfo()
+    {
+        return $this->writeDB->errorInfo;
+    }
 
 }

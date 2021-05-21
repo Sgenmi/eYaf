@@ -15,7 +15,7 @@
     ],
     "require": {
         "php": ">=7.1.0",
-        "catfan/medoo": "^1.7.10",
+        "catfan/medoo": "^2.0.0",
         "sgenmi/yaf-help-doc": "^0.0.1"
     },
     "autoload": {
