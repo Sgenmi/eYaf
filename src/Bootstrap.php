@@ -27,25 +27,29 @@ class Bootstrap extends \Yaf\Bootstrap_Abstract
             ini_set('display_errors', 'Off');
         }
     }
-    // 安全输入
-    public function _initFilter()
-    {
-        \Sgenmi\eYaf\Utility\Filter::request();
-    }
-
+    
     private function getDBConfig($isMaster = false)
     {
         $_config = \Yaf\Registry::get('_config');
+        $options=[];
         if ($isMaster) {
-            $options = $_config->database->params->master->toArray();
+            if($_config->database->params->master){
+                $options = $_config->database->params->master->toArray();
+            }
         } else {
             // 如果没有设置从库，就直接选主库
             if (! isset($_config->database->params->slave)) {
-                $options = $_config->database->params->master->toArray();
+                if(isset($_config->database->params->master)){
+                    $options = $_config->database->params->master->toArray();
+                }
             } else {
                 $slaveArr = $_config->database->params->slave->toArray();
-                $randKey = array_rand($slaveArr, 1);
-                $options = $slaveArr[$randKey];
+                if(isset($slaveArr['host'])){
+                    $options = $slaveArr;
+                }else{
+                    $randKey = array_rand($slaveArr, 1);
+                    $options = $slaveArr[$randKey];
+                }
             }
         }
         return $options;
