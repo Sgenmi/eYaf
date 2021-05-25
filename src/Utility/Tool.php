@@ -54,11 +54,11 @@ class Tool
     /**
      * @desc 元转分
      * @param float $val
-     * @return float|int
+     * @return int
      */
     public static function yuanToCent(float $val)
     {
-        return $val * 100;
+        return (int)($val * 100);
     }
 
     public static function  parseUrl($url){
