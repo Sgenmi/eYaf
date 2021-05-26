@@ -186,7 +186,7 @@ abstract class Model implements ModelInface
     public function insert($datas)
     {
         $smt = $this->writeDB->insert($this->table, $datas);
-        if (!empty($updateObj)) {
+        if (!empty($smt)) {
             if ($smt->rowCount() > 0) {
                 return $this->writeDB->id();
             }
