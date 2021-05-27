@@ -52,6 +52,12 @@ class Bootstrap extends \Yaf\Bootstrap_Abstract
                 }
             }
         }
+        //兼容medoo 1.x 升级 2.x
+        if($options && isset($options['database_name'])){
+            $options['type'] = $options['database_type'];
+            $options['database'] = $options['database_name'];
+            $options['host'] = $options['server'];
+        }
         return $options;
     }
     //连接数据库
