@@ -65,6 +65,9 @@ abstract class Model implements ModelInface
 
     public function setDb($db)
     {
+        if(empty($db)){
+            return $this;
+        }
         if(!($db instanceof Medoo)){
             $className =  get_class($db);
             throw new \Exception($className .' not Medoo instance, please inject Medoo instance' );
@@ -72,7 +75,7 @@ abstract class Model implements ModelInface
         $this->writeDB = $db;
         $this->readDB = $db;
         $this->db = $db;
-
+        return $this;
     }
 
     // 统一判断用户提交数据,省去重复判断
