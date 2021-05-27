@@ -33,13 +33,13 @@ class Bootstrap extends \Yaf\Bootstrap_Abstract
         $_config = \Yaf\Registry::get('_config');
         $options=[];
         if ($isMaster) {
-            if($_config->database->params->master){
+            if(!empty($_config->database->params->master)){
                 $options = $_config->database->params->master->toArray();
             }
         } else {
             // 如果没有设置从库，就直接选主库
-            if (! isset($_config->database->params->slave)) {
-                if(isset($_config->database->params->master)){
+            if (empty($_config->database->params->slave)) {
+                if(!empty($_config->database->params->master)){
                     $options = $_config->database->params->master->toArray();
                 }
             } else {
