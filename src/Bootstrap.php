@@ -6,7 +6,7 @@
  */
 
 namespace Sgenmi\eyaf;
-require dirname(getcwd()).'/vendor/autoload.php';
+require (defined('BASE_PATH') && BASE_PATH ? BASE_PATH: dirname(getcwd())).'/vendor/autoload.php';
 class Bootstrap extends \Yaf\Bootstrap_Abstract
 {
     //全部设置配置文件

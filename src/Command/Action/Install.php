@@ -29,7 +29,7 @@ class Install
 
     private function createProjectDir(){
         $dirs=[
-            'application'=>'Bootstrap.yafphp',
+            'application'=>['Bootstrap.yafphp','sbin.yafphp'],
             'application/conf'=>'config.ini',
             'application/controllers'=>['IndexController.yafphp','ErrorController.yafphp'],
             'application/library'=>'Funs.yafphp',
@@ -38,6 +38,7 @@ class Install
             'application/plugins'=>'.gitkeep',
             'application/repositorys'=>'IndexRepository.yafphp',
             'application/services'=>'IndexService.yafphp',
+            'application/task'=>['Base.yafphp','Test.yafphp'],
             'public'=>'index.yafphp'
         ];
         $resPath = __DIR__."/../Res";
