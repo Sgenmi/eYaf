@@ -1,15 +1,23 @@
 <?php
 
 namespace Task;
+
 use Medoo\Medoo;
 
 abstract class Base{
 
     protected $params = [];
+    protected $config=[];
     public function __construct($params=[]){
         $this->setParams($params);
+        $this->config = (\Yaf\Registry::get('_config'))->toArray();
     }
 
+    /**
+     * @author Sgenmi
+     *
+     * @param array $params
+     */
     private function setParams($params = [])
     {
         if (!$params) {
@@ -49,29 +57,48 @@ abstract class Base{
     }
 
     /**
-     * @param string $configName
+     * @author Sgenmi
+     * @param string $dbName
      * @return Medoo
+     * @throws \Exception
      */
-    protected function getMedoo(string $configName='master'):Medoo{
-        $_config = \Yaf\Registry::get('_config');
-        $options=[];
-        if($_config->database->params->$configName){
-            $options = $_config->database->params->$configName->toArray();
+    protected function getMedoo(string $dbName='master'):Medoo{
+
+        if(empty($this->config['database']['params'][$dbName])){
+            throw new \Exception('The '.$dbName.' database configuration does not exist or incorrectly configured');
         }
+        if($dbName=='slave'){
+            throw new \Exception('The command line can not used slave database, it may affect the results');
+        }
+        $options =$this->config['database']['params'][$dbName];
         return new Medoo($options);
     }
 
     /**
-     * @param string $type
+     * @author Sgenmi
+     * @param string $redisName
      * @return \Redis
+     * @throws \Exception
      */
-    protected function getRedis(string $type = 'redis.app'):\Redis
+    protected function getRedis(string $redisName = 'app'):\Redis
     {
         $redis = new \Redis();
-        $_redis_config = $this->config[$type];
-        $redis->connect($_redis_config["host"], $_redis_config["port"]);
+        if(empty($this->config['redis'][$redisName])){
+            throw new \Exception('The '.$redisName.' redis configuration does not exist');
+        }
+        $_redis_config = $this->config['redis'][$redisName];
+        $isConn = $redis->connect($_redis_config["host"]??'', $_redis_config["port"]??'');
+        if(!$isConn){
+            throw new \Exception('The '.$redisName.' redis configuration connection failed');
+        }
         if (isset($_redis_config["auth"]) && $_redis_config["auth"]) {
-            $redis->auth($_redis_config["auth"]);
+            $isOk = $redis->auth($_redis_config["auth"]);
+            if(!$isOk){
+                throw new \Exception('The '.$redisName.' redis configuration auth failed');
+            }
+        }
+        if (isset($_redis_config["db"]) && $_redis_config["db"] >=0 && $_redis_config["db"]<=16) {
+            $redis->select((int) $_redis_config["db"] );
         }
         return $redis;
     }
