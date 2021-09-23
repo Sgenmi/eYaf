@@ -1,0 +1,22 @@
+<?php
+
+/**
+ * Created by IntelliJ IDEA.
+ * Author: sgenmi
+ * Date: 2021/4/6 下午8:56
+ * Email: 150560159@qq.com
+ */
+
+trait Singleton
+{
+    private static $instance;
+
+    static function getInstance(...$args)
+    {
+        if(!isset(self::$instance)){
+            self::$instance = new static(...$args);
+        }
+        return self::$instance;
+    }
+
+}
