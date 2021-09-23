@@ -1,0 +1,22 @@
+<?php
+
+/**
+ * Created by IntelliJ IDEA.
+ * Author: sgenmi
+ * Date: 2021/9/23 下午2:24
+ * Email: 150560159@qq.com
+ */
+
+abstract class Admin extends \Web
+{
+    protected function getTokenInfo():array {
+        $info = \Sgenmi\eYaf\Auth\Token::getTokenInfo(\Config::TOKEN_ADMIN_KEY);
+        return is_array($info)  ?$info:[];
+    }
+
+    protected function getTokenUserId():int{
+        $userId =  \Sgenmi\eYaf\Auth\Token::getUserId(\Config::TOKEN_ADMIN_KEY);
+        return $userId+0;
+    }
+
+}
