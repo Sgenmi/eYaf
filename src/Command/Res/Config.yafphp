@@ -1,0 +1,16 @@
+<?php
+
+/**
+ * Created by IntelliJ IDEA.
+ * Author: sgenmi
+ * Date: 2021/9/23 下午2:24
+ * Email: 150560159@qq.com
+ */
+
+class Config
+{
+    const TOKEN_USER_KEY="web:user";  //用户登录token 前辍
+    const TOKEN_ADMIN_KEY="admin:user";  //管理后台登录token前辍
+
+
+}

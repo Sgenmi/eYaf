@@ -32,7 +32,7 @@ class Install
             'application'=>['Bootstrap.yafphp','sbin.yafphp'],
             'application/conf'=>'config.ini',
             'application/controllers'=>['IndexController.yafphp','ErrorController.yafphp'],
-            'application/library'=>'Funs.yafphp',
+            'application/library'=>['Funs.yafphp','Admin.yafphp','Web.yafphp','Singleton.yafphp','Config.yafphp'],
             'application/models'=>'UserModel.yafphp',
             'application/modules'=>'.gitkeep',
             'application/plugins'=>'.gitkeep',
