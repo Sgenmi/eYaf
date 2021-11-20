@@ -29,7 +29,7 @@ class Install
 
     private function createProjectDir(){
         $dirs=[
-            'application'=>['Bootstrap.yafphp','sbin.yafphp'],
+            'application'=>['Bootstrap.yafphp','sbin.yafphp','bin.yafphp'],
             'application/conf'=>'config.ini',
             'application/controllers'=>['IndexController.yafphp','ErrorController.yafphp'],
             'application/library'=>['Funs.yafphp','Admin.yafphp','Web.yafphp','Singleton.yafphp','Config.yafphp'],
