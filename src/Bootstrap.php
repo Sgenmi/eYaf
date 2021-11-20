@@ -27,6 +27,19 @@ class Bootstrap extends \Yaf\Bootstrap_Abstract
             ini_set('display_errors', 'Off');
         }
     }
+
+    public function _initRegisterNameSpace(){
+        //注册模块名命名空间
+        $loader = \Yaf\Loader::getInstance(APP_PATH.'/library');
+        $modules= \Yaf\Registry::get('_modules');
+        if($modules && is_array($modules)){
+            foreach ($modules as $v){
+                $loader->registerNamespace(sprintf("\%s\Model",$v), APP_PATH."/modules/{$v}/models");
+                $loader->registerNamespace(sprintf("\%s\Service",$v), APP_PATH."/modules/{$v}/services");
+                $loader->registerNamespace(sprintf("\%s\Command",$v), APP_PATH."/modules/{$v}/command");
+            }
+        }
+    }
     
     private function getDBConfig($isMaster = false)
     {
