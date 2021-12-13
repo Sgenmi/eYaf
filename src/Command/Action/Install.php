@@ -29,16 +29,15 @@ class Install
 
     private function createProjectDir(){
         $dirs=[
-            'application'=>['Bootstrap.yafphp','sbin.yafphp','bin.yafphp'],
-            'application/conf'=>'config.ini',
+            'application'=>['Bootstrap.yafphp'],
+            'application/conf'=>'config.yafphp',
             'application/controllers'=>['IndexController.yafphp','ErrorController.yafphp'],
-            'application/library'=>['Funs.yafphp','Admin.yafphp','Web.yafphp','Singleton.yafphp','Config.yafphp'],
+            'application/library'=>['Funs.yafphp','Admin.yafphp','Web.yafphp','Singleton.yafphp'],
             'application/models'=>'UserModel.yafphp',
             'application/modules'=>'.gitkeep',
             'application/plugins'=>'.gitkeep',
             'application/repositorys'=>'IndexRepository.yafphp',
             'application/services'=>'IndexService.yafphp',
-            'application/task'=>['Base.yafphp','Test.yafphp'],
             'public'=>'index.yafphp'
         ];
         $resPath = __DIR__."/../Res";
@@ -57,20 +56,21 @@ class Install
                         $getContent = file_get_contents($resPath.DIRECTORY_SEPARATOR.$vv);
                     }
                     file_put_contents($dir.DIRECTORY_SEPARATOR.str_replace(['Controller','Model'],'',str_replace('.yafphp','.php',$vv)),$getContent);
-                    if($vv=='config.ini'){
-                        file_put_contents($dir.DIRECTORY_SEPARATOR.$vv.'.bak',$getContent);
-                    }
-                    if($vv=='index.yafphp'){
+                    if($vv=='index.yafphp' || $vv=='config.yafphp'){
                         file_put_contents($dir.DIRECTORY_SEPARATOR.str_replace('.yafphp','.php',$vv).'.bak',$getContent);
                     }
                 }
             }
         }
+
+        file_put_contents(APP_ROOT.'/bin.php',file_get_contents($resPath.DIRECTORY_SEPARATOR.'bin.yafphp'));
+
+
         $gitignore=<<<EOF
 .idea
 .DS_Store
 .project
-application/conf/config.ini
+application/conf/config.php
 .buildpath
 upload
 application/log/*.log

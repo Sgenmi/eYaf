@@ -24,6 +24,6 @@
   * The corresponding key value of the token in the custom header
   */
  // define('HEADER_TOKEN','token');
-
- $app = new \Yaf\Application(APP_PATH . "/conf/config.ini");
+ $config = require APP_PATH."/conf/config.php";
+ $app = new \Yaf\Application($config);
  $app->bootstrap()->run();
