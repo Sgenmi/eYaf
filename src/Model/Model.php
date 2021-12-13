@@ -8,13 +8,31 @@
 namespace Sgenmi\eYaf\Model;
 
 use Medoo\Medoo;
+use Medoo\Raw;
 
 abstract class Model implements ModelInface
 {
+    /**
+     * @var Medoo|mixed
+     */
     protected $db;
+    /**
+     * @var Medoo
+     */
     private $readDB;
+
+    /**
+     * @var Medoo
+     */
     private $writeDB;
+    /**
+     * @var array
+     */
     protected $check_rule;
+
+    /**
+     * @var string
+     */
     public $table;
     // protected $check_rule = [
     // 'user_name' => [
@@ -26,7 +44,16 @@ abstract class Model implements ModelInface
     // 'range' => [[6, 32], "用户名密码只能6到32个字符"]
     // ]
     // ];
+
+    /**
+     * @var array
+     */
     protected $check_field;
+
+    /**
+     * @var \PDOStatement;
+     */
+    protected $statement;
 
     // public function checkLogin($d)
     // {
@@ -43,10 +70,14 @@ abstract class Model implements ModelInface
         $this->writeDB = \Yaf\Registry::get('_masterDB');
         $this->readDB = \Yaf\Registry::get('_slaveDB');
         $this->db = $this->writeDB;
-        // $this->db = new Medoo\Medoo();
     }
 
-    public function checkField($data, $field = [])
+    /**
+     * @param array $data
+     * @param array $field
+     * @return bool|mixed|string
+     */
+    public function checkField(array $data, array $field = [])
     {
         if(!$data){
             return "请求参数为空";
@@ -58,12 +89,20 @@ abstract class Model implements ModelInface
         return $this->check_data($data);
     }
 
-    public function getDb()
+    /**
+     * @return Medoo
+     */
+    public function getDb():Medoo
     {
         return $this->db;
     }
 
-    public function setDb($db)
+    /**
+     * @param Medoo $db
+     * @return $this
+     * @throws \Exception
+     */
+    public function setDb(Medoo $db)
     {
         if(empty($db)){
             return $this;
@@ -82,14 +121,12 @@ abstract class Model implements ModelInface
     private function check_data($d)
     {
         $ret = TRUE;
-
         if (!$this->check_field) {
             return $ret;
         }
         $check_field = array_flip($this->check_field);
 
         foreach ($d as $k => $v) {
-
             // 判断是否需要验证字段
             if (!isset($check_field[$k])) {
                 continue;
@@ -99,10 +136,8 @@ abstract class Model implements ModelInface
                 continue;
             }
             foreach ($this->check_rule[$k] as $_k => $fv) {
-
                 switch ($_k) {
                     case 'required': // 必填
-
                         if (is_string($fv)) {
                             $fv = [
                                 true,
@@ -110,14 +145,12 @@ abstract class Model implements ModelInface
                             ];
                         }
                         if ($fv[0]) {
-
                             if (!is_numeric($v) && $v !== 0 && empty($v) && !isset($this->check_rule[$k]['in'])) { // 注意有0情况
                                 $ret = $fv[1];
                             }
                         }
                         break;
                     case 'range': // 长度范围
-
                         if ($v) {
                             $len = mb_strlen($v, 'utf-8');
                             if (is_array($fv)) {
@@ -184,15 +217,20 @@ abstract class Model implements ModelInface
                 }
             }
         }
-
         if ($ret == true && $check_field) {
             $ret = "参数不全";
         }
-
         return $ret;
     }
 
-    public function select($join, $columns = null, $where = null, $is_slave = false)
+    /**
+     * @param array $join
+     * @param array|string $columns
+     * @param array $where
+     * @param bool $is_slave
+     * @return array|null
+     */
+    public function select($join, $columns = null, $where = null, $is_slave = false):?array
     {
         if ($is_slave) {
             return $this->readDB->select($this->table, $join, $columns, $where);
@@ -201,36 +239,73 @@ abstract class Model implements ModelInface
         }
     }
 
-    public function insert($datas)
+    /**
+     * @param array $datas
+     * @param string|null $primaryKey
+     * @return bool|int
+     */
+    public function insert(array $datas,string $primaryKey = null)
     {
-        $smt = $this->writeDB->insert($this->table, $datas);
-        if (!empty($smt)) {
-            if ($smt->rowCount() > 0) {
-                return $this->writeDB->id();
+        $statement = $this->writeDB->insert($this->table, $datas);
+        $this->statement = $statement;
+        if (!empty($statement)) {
+            if ($statement->rowCount() > 0) {
+                return (int)($this->writeDB->id());
             }
         }
         return false;
     }
 
-    public function update($datas, $where = null)
+    /**
+     * @param array $datas
+     * @param array $where
+     * @return bool
+     */
+    public function update(array $datas, $where = null):bool
     {
-        $updateObj = $this->writeDB->update($this->table, $datas, $where);
-        if (!empty($updateObj)) {
-            return $updateObj->rowCount()?true:false;
+        $statement = $this->writeDB->update($this->table, $datas, $where);
+        $this->statement = $statement;
+        if (!empty($statement)) {
+            return true;
         }
         return false;
     }
 
-    public function delete($where)
+    /**
+     * @param array|Raw $where
+     * @return bool
+     */
+    public function delete($where):bool
     {
-        return $this->writeDB->delete($this->table, $where);
+        $statement =  $this->writeDB->delete($this->table, $where);
+        $this->statement = $statement;
+        if (!empty($statement)) {
+            return true;
+        }
+        return false;
     }
 
-    public function replace($columns, $where = null)
+    /**
+     * @param array $columns
+     * @param array $where
+     * @return bool
+     */
+    public function replace($columns, $where = null):bool
     {
-        return $this->writeDB->replace($this->table, $columns, $where);
+        $statement =  $this->writeDB->replace($this->table, $columns, $where);
+        if (!empty($statement)) {
+            return true;
+        }
+        return false;
     }
 
+    /**
+     * @param array $join
+     * @param array|string $columns
+     * @param array $where
+     * @param bool $is_slave
+     * @return mixed
+     */
     public function get($join = null, $columns = null, $where = null, $is_slave = false)
     {
         if ($is_slave) {
@@ -240,12 +315,24 @@ abstract class Model implements ModelInface
         }
     }
 
-    public function has($join, $where = null)
+    /**
+     * @param array $join
+     * @param array $where
+     * @return bool
+     */
+    public function has(array $join, $where = null):bool
     {
         return $this->writeDB->has($this->table, $join, $where);
     }
 
-    public function rand($join = null, $columns = null, $where = null, $is_slave = false)
+    /**
+     * @param array $join
+     * @param array|string $columns
+     * @param array $where
+     * @param bool $is_slave
+     * @return array
+     */
+    public function rand($join = null, $columns = null, $where = null, $is_slave = false):?array
     {
         if ($is_slave) {
             return $this->readDB->rand($this->table, $join, $columns, $where);
@@ -254,7 +341,14 @@ abstract class Model implements ModelInface
         }
     }
 
-    public function count($join = null, $column = null, $where = null, $is_slave = false)
+    /**
+     * @param array $join
+     * @param string $column
+     * @param array $where
+     * @param bool $is_slave
+     * @return int|null
+     */
+    public function count($join = null, $column = null, $where = null, $is_slave = false):?int
     {
         if ($is_slave) {
             return $this->readDB->count($this->table, $join, $column, $where) + 0;
@@ -263,7 +357,14 @@ abstract class Model implements ModelInface
         }
     }
 
-    public function sum($join, $column = null, $where = null, $is_slave = false)
+    /**
+     * @param array $join
+     * @param string $column
+     * @param array $where
+     * @param bool $is_slave
+     * @return int|string|null
+     */
+    public function sum(array $join, $column = null, $where = null, $is_slave = false)
     {
         if ($is_slave) {
             return $this->readDB->sum($this->table, $join, $column, $where) + 0;
@@ -272,68 +373,181 @@ abstract class Model implements ModelInface
         }
     }
 
-    public function avg($join, $column = null, $where = null)
+    /**
+     * @param array $join
+     * @param string $column
+     * @param array $where
+     * @return string|null
+     */
+    public function avg(array $join, $column = null, $where = null)
     {
         return $this->writeDB->avg($this->table, $join, $column, $where);
     }
 
-    public function max($join, $column = null, $where = null)
+    /**
+     * @param array $join
+     * @param string $column
+     * @param array $where
+     * @return string|null
+     */
+    public function max(array $join, $column = null, $where = null)
     {
         return $this->writeDB->max($this->table, $join, $column, $where);
     }
 
-    public function min($join, $column = null, $where = null)
+    /**
+     * @param array $join
+     * @param string $column
+     * @param array $where
+     * @return string|null
+     */
+    public function min(array $join, $column = null, $where = null)
     {
         return $this->writeDB->min($this->table, $join, $column, $where);
     }
 
-    public function action($actions)
+
+    /**
+     * @param callable $actions
+     * @param string $error
+     * @return bool
+     */
+    public function action(callable $actions,string &$error=null)
     {
-        return $this->writeDB->action($actions);
+        $ret = true;
+        try {
+            $this->writeDB->action($actions);
+        }catch (\Throwable $e){
+            $error = $e->getTraceAsString();
+            $ret =  false;
+        }
+        return $ret;
     }
 
-    public function debug()
+    /**
+     * @param array $columns
+     * @param array $options
+     * @return bool
+     */
+    public function create(array $columns, $options = null):bool {
+        $this->statement = $this->writeDB->create($this->table,$columns,$options);
+        if(!empty($this->statement)){
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @return bool
+     */
+    public function drop():bool {
+        $this->statement = $this->writeDB->drop($this->table);
+        if(!empty($this->statement)){
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @return $this
+     */
+    public function debug():void 
     {
         $this->writeDB->debug();
         return $this;
     }
 
-    public function error()
+    /**
+     * @return string|null
+     */
+    public function error():?string
     {
         return $this->writeDB->error;
     }
 
-    public function last()
+    /**
+     * @return string|null
+     */
+    public function last():?string
     {
         return $this->writeDB->last();
     }
 
-    public function log()
+    /**
+     * @return array
+     */
+    public function log():array
     {
         return $this->writeDB->log();
     }
 
-    public function query($sql, $pdo)
+    /**
+     * @param string $sql
+     * @param $pdo
+     * @return array|bool|null
+     */
+    public function query(string $sql, $pdo_fetch = \PDO::FETCH_ASSOC):?array
     {
-        return $this->writeDB->query($sql)->fetchAll($pdo);
+        $this->statement =  $this->writeDB->query($sql);
+        if(!empty($this->statement)){
+            return $this->statement->fetchAll($pdo_fetch);
+        }
+        return false;
     }
 
-    public function raw($string, $map = [])
+    /**
+     * @param string $string
+     * @return string
+     */
+    public function quote(string $string):?string {
+       return $this->writeDB->quote($string);
+    }
+
+    /**
+     * @return string
+     */
+    public function tableQuote():string {
+        return $this->writeDB->tableQuote($this->table);
+    }
+
+    /**
+     * @param $string
+     * @param array $map
+     * @return Medoo|Raw
+     */
+    public function raw($string, $map = []):?Raw
     {
         return $this->writeDB->raw($string, $map);
     }
 
-    public function beginDebug(){
+    /**
+     *
+     */
+    public function beginDebug():void
+    {
         return $this->writeDB->beginDebug();
     }
 
-    public function debugLog(){
+    /**
+     * @return array
+     */
+    public function debugLog():array {
         return $this->writeDB->debugLog();
     }
 
-    public function errorInfo()
+    /**
+     * @return array|null
+     */
+    public function errorInfo():?array
     {
         return $this->writeDB->errorInfo;
+    }
+
+    /**
+     * @return array
+     */
+    public function info():array {
+        return $this->writeDB->info();
     }
 
 }
