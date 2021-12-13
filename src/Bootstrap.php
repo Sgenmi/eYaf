@@ -40,28 +40,52 @@ class Bootstrap extends \Yaf\Bootstrap_Abstract
             }
         }
     }
-    
-    private function getDBConfig($isMaster = false)
+
+    /**
+     * 获取链接db,兼容升级
+     * @param bool $isMaster
+     * @return array
+     */
+    private function getDBConfig(bool $isMaster = false)
     {
         $_config = \Yaf\Registry::get('_config');
         $options=[];
         if ($isMaster) {
-            if(!empty($_config->database->params->master)){
-                $options = $_config->database->params->master->toArray();
-            }
-        } else {
-            // 如果没有设置从库，就直接选主库
-            if (empty($_config->database->params->slave)) {
+            if(is_object($_config)){
                 if(!empty($_config->database->params->master)){
                     $options = $_config->database->params->master->toArray();
                 }
-            } else {
-                $slaveArr = $_config->database->params->slave->toArray();
-                if(isset($slaveArr['host'])){
-                    $options = $slaveArr;
-                }else{
-                    $randKey = array_rand($slaveArr, 1);
-                    $options = $slaveArr[$randKey];
+            }else{
+                $options = $_config['database']['params']['master']??[];
+            }
+
+        } else {
+            // 如果没有设置从库，就直接选主库
+            if(is_object($_config)){
+                if (empty($_config->database->params->slave)) {
+                    if(!empty($_config->database->params->master)){
+                        $options = $_config->database->params->master->toArray();
+                    }
+                } else {
+                    $slaveArr = $_config->database->params->slave->toArray();
+                    if(isset($slaveArr['host'])){
+                        $options = $slaveArr;
+                    }else{
+                        $randKey = array_rand($slaveArr, 1);
+                        $options = $slaveArr[$randKey];
+                    }
+                }
+            }else{
+                $slaveArr = $_config['database']['params']['slave']??[];
+                if (empty($saves)) {
+                    $options = $_config['database']['params']['master']??[];
+                } else {
+                    if(isset($slaveArr['host'])){
+                        $options = $slaveArr;
+                    }else{
+                        $randKey = array_rand($slaveArr, 1);
+                        $options = $slaveArr[$randKey];
+                    }
                 }
             }
         }
