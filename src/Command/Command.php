@@ -10,16 +10,19 @@
 namespace Sgenmi\eYaf\Command;
 
 use Medoo\Medoo;
+use Sgenmi\eYaf\Command\Action\Create;
 use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
 
 
 class Command extends \Symfony\Component\Console\Command\Command
 {
     protected $config;
-    public function __construct(string $name = null)
+
+    protected function initialize(InputInterface $input, OutputInterface $output)
     {
-        parent::__construct($name);
-        $this->config = (\Yaf\Registry::get('_config'))->toArray();
+        $this->config = \Yaf\Registry::get('_config');
     }
 
     public function start(){
@@ -32,7 +35,14 @@ class Command extends \Symfony\Component\Console\Command\Command
    }
 
    private function getAllCommand():array{
-        return [];
+        return [
+            new Create('create:controller'),
+            new Create('create:model'),
+            new Create('create:module'),
+            new Create('create:plugin'),
+            new Create('create:service'),
+            new Create('create:repository'),
+        ];
    }
 
 
