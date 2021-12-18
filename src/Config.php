@@ -7,13 +7,9 @@
  * Email: 150560159@qq.com
  */
 
-namespace Sgenmi\eyaf;
+namespace Sgenmi\eYaf;
 
-
-class Config
-{
-    const TOKEN_USER_KEY="web:user";  //用户登录token 前辍
-    const TOKEN_ADMIN_KEY="admin:user";  //管理后台登录token前辍
+class Config {
 
     /**
      * @param string $key
