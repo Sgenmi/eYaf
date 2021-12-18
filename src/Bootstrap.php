@@ -5,7 +5,7 @@
  * Date: 2020/3/26 22:02
  */
 
-namespace Sgenmi\eyaf;
+namespace Sgenmi\eYaf;
 require (defined('BASE_PATH') && BASE_PATH ? BASE_PATH: dirname(getcwd())).'/vendor/autoload.php';
 class Bootstrap extends \Yaf\Bootstrap_Abstract
 {
@@ -13,7 +13,7 @@ class Bootstrap extends \Yaf\Bootstrap_Abstract
     public function _initBootstrap()
     {
         $config = \Yaf\Application::app()->getConfig();
-        \Yaf\Registry::set('_config', $config);
+        \Yaf\Registry::set('_config', $config->toArray());
     }
 
     //关闭错误
