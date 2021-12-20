@@ -118,7 +118,7 @@ abstract class Model implements ModelInface
     }
 
     // 统一判断用户提交数据,省去重复判断
-    private function check_data($d)
+    private function check_data(array $d)
     {
         $ret = TRUE;
         if (!$this->check_field) {
@@ -451,7 +451,7 @@ abstract class Model implements ModelInface
     /**
      * @return $this
      */
-    public function debug():void 
+    public function debug():Model
     {
         $this->writeDB->debug();
         return $this;
@@ -525,7 +525,7 @@ abstract class Model implements ModelInface
      */
     public function beginDebug():void
     {
-        return $this->writeDB->beginDebug();
+        $this->writeDB->beginDebug();
     }
 
     /**
