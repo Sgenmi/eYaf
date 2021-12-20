@@ -10,18 +10,18 @@ use Medoo\Medoo;
 
 interface ModelInface
 {
-    public function getDb();
+    public function getDb():Medoo;
 
-    public function setDb( $db);
+    public function setDb( Medoo $db);
 
     // 统一判断用户提交数据,省去重复判断
-    public function checkField($data,$field=[]);
+    public function checkField(array $data,array $field=[]);
 
     public function select($join, $columns = null, $where = null, $is_slave = false);
 
-    public function insert($datas);
+    public function insert(array $datas);
 
-    public function update($datas, $where = null);
+    public function update(array $datas, $where = null);
 
     public function delete($where);
 
@@ -29,21 +29,21 @@ interface ModelInface
 
     public function get($join = null, $columns = null, $where = null, $is_slave = false);
 
-    public function has($join, $where = null);
+    public function has(array $join, $where = null);
 
     public function rand($join = null, $columns = null, $where = null, $is_slave = false);
 
     public function count($join = null, $column = null, $where = null, $is_slave = false);
 
-    public function sum($join, $column = null, $where = null, $is_slave = false);
+    public function sum(array $join, $column = null, $where = null, $is_slave = false);
 
-    public function avg($join, $column = null, $where = null);
+    public function avg(array $join, $column = null, $where = null);
 
-    public function max($join, $column = null, $where = null);
+    public function max(array $join, $column = null, $where = null);
 
-    public function min($join, $column = null, $where = null);
+    public function min(array $join, $column = null, $where = null);
 
-    public function action($actions);
+    public function action(callable $actions);
 
     public function debug();
 
