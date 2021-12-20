@@ -28,6 +28,15 @@ class Bootstrap extends \Yaf\Bootstrap_Abstract
         }
     }
 
+    public function _initCommon()
+    {
+        \Yaf\Loader::import('Funs.php');
+        $loader = \Yaf\Loader::getInstance(APP_PATH.'/library');
+        $loader->registerNamespace("\Service", APP_PATH."/services/");
+        $loader->registerNamespace("\Repository",APP_PATH."/repositorys/");
+        $loader->registerNamespace("\Command",APP_PATH."/commands/");
+    }
+
     public function _initRegisterNameSpace(){
         //注册模块名命名空间
         $loader = \Yaf\Loader::getInstance(APP_PATH.'/library');
