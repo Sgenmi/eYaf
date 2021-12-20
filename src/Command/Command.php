@@ -34,8 +34,12 @@ class Command extends \Symfony\Component\Console\Command\Command
        $application->run();
    }
 
-   private function getAllCommand():array{
-        return [
+    /**
+     * 命令行统一加载
+     * @return array
+     */
+    private function getAllCommand():array{
+        $commands=[
             new Create('create:controller'),
             new Create('create:model'),
             new Create('create:module'),
@@ -43,8 +47,26 @@ class Command extends \Symfony\Component\Console\Command\Command
             new Create('create:service'),
             new Create('create:repository'),
         ];
-   }
+        if(defined('APP_PATH')){
+            $cmdConfFile =  APP_PATH.'/conf/command.php';
+            if(is_file($cmdConfFile)){
+                $cmdConfArr = require $cmdConfFile;
+                $commands = array_merge($commands,$cmdConfArr);
+            }
+        }
 
+        $modules= \Yaf\Registry::get('_modules');
+        if($modules && is_array($modules)){
+            foreach ($modules as $v){
+                $cmdConfFile =  APP_PATH."/modules/{$v}/command/command.php";
+                if(is_file($cmdConfFile)){
+                    $cmdConfArr = require $cmdConfFile;
+                    $commands = array_merge($commands,$cmdConfArr);
+                }
+            }
+        }
+        return $commands;
+    }
 
     /**
      * 获取Redis实际，主要命令行中兼容协程不共享实例
