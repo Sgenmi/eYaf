@@ -11,12 +11,22 @@ require BASE_PATH."/vendor/sgenmi/eyaf/src/Bootstrap.php";
 
 class Bootstrap extends \Sgenmi\eyaf\Bootstrap
 {
-    public function _initCommon()
+    //Custom route
+    public function _initRoutes(\Yaf\Dispatcher $dispatcher)
     {
-        \Yaf\Loader::import('Funs.php');
-        $loader = \Yaf\Loader::getInstance(APP_PATH.'/library');
-        $loader->registerNamespace("\Service", APP_PATH."/services/");
-        $loader->registerNamespace("\Repository",APP_PATH."/repositorys/");
+        $router = $dispatcher->getRouter();
+//        $router->addRoute('用户登录', new \Yaf\Route\Rewrite('/login', [
+//            "module" => "index",
+//            "controller" => "member",
+//            "action" => "login"
+//        ]));
+    }
+
+    //Custom plugin
+    public function _initPlugins(\Yaf\Dispatcher $dispatcher)
+    {
+        //$auth = new \Plugin\Auth();
+        //$dispatcher->registerPlugin($auth);
     }
 
 

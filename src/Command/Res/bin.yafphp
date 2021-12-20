@@ -12,7 +12,7 @@ ini_set('yaf.name_separator', '\\');
 ini_set('yaf.use_spl_autoload', 1);
 
 define('DEVELOPMENT', true);
-define("BASE_PATH", dirname(__DIR__));
+define("BASE_PATH", __DIR__);
 define("APP_PATH", BASE_PATH . '/application');
 define("LOG_PATH", APP_PATH . "/log");
 define("IS_MASTER_SLAVE", false);
