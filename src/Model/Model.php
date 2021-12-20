@@ -224,7 +224,7 @@ abstract class Model implements ModelInface
     }
 
     /**
-     * @param array $join
+     * @param array|string $join
      * @param array|string $columns
      * @param array $where
      * @param bool $is_slave
@@ -300,7 +300,7 @@ abstract class Model implements ModelInface
     }
 
     /**
-     * @param array $join
+     * @param array|string $join
      * @param array|string $columns
      * @param array $where
      * @param bool $is_slave
@@ -426,10 +426,10 @@ abstract class Model implements ModelInface
 
     /**
      * @param array $columns
-     * @param array $options
+     * @param array|null $options
      * @return bool
      */
-    public function create(array $columns, $options = null):bool {
+    public function create(array $columns, array $options = null):bool {
         $this->statement = $this->writeDB->create($this->table,$columns,$options);
         if(!empty($this->statement)){
             return true;
@@ -483,10 +483,10 @@ abstract class Model implements ModelInface
 
     /**
      * @param string $sql
-     * @param $pdo
+     * @param int $pdo_fetch
      * @return array|bool|null
      */
-    public function query(string $sql, $pdo_fetch = \PDO::FETCH_ASSOC):?array
+    public function query(string $sql, int $pdo_fetch = \PDO::FETCH_ASSOC):?array
     {
         $this->statement =  $this->writeDB->query($sql);
         if(!empty($this->statement)){
@@ -515,7 +515,7 @@ abstract class Model implements ModelInface
      * @param array $map
      * @return Medoo|Raw
      */
-    public function raw($string, $map = []):?Raw
+    public function raw(string $string, array $map = []):?Raw
     {
         return $this->writeDB->raw($string, $map);
     }
