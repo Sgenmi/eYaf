@@ -29,6 +29,21 @@ class Create extends Command
     private $output;
 
     /**
+     * @var string
+     */
+    private $fileName;
+
+    /**
+     * @var string
+     */
+    private $date;
+
+    /**
+     * @var string
+     */
+    private $author;
+
+    /**
      * @var array
      */
     private $descInfo=[
@@ -62,6 +77,9 @@ class Create extends Command
     {
         parent::__construct($name);
         $this->setDescription($this->descInfo[$name]['desc']??'');
+
+        $this->date = date("Y/m/d H:i");
+        $this->author = $_SERVER['USER']?? $_SERVER['USERNAME']??'';
     }
 
     protected function configure()
@@ -83,14 +101,40 @@ class Create extends Command
         if(!$fileName){
             return 0;
         }
-        $output->writeln('999');
-        $output->writeln($fileName);
+        $this->fileName = $fileName;
         $action = explode(':',$this->getName())[1];
         $this->$action();
         return 0;
     }
 
     private function controller(){
+
+        $str =<<<EOF
+
+<?php
+
+/**
+ * Author: {$this->author}
+ * Date: {$this->date}
+ */
+
+namespace Controller;
+
+class {$this->fileName} extends \Web {
+
+    public function init(){
+        parent::init();
+    }
+    
+    public function indexAction(){
+    
+    }
+
+}
+
+EOF;
+
+        echo $str;
 
     }
     
