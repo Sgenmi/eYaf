@@ -6,10 +6,7 @@
  */
 
 namespace Sgenmi\eYaf\Model;
-
-use Medoo\Medoo;
 use Medoo\Raw;
-
 abstract class Model implements ModelInface
 {
     /**
@@ -548,6 +545,31 @@ abstract class Model implements ModelInface
      */
     public function info():array {
         return $this->writeDB->info();
+    }
+
+    /**
+     * @param string $type
+     * @return Medoo
+     */
+    public function lock(string $type = Medoo::LOCK_FOR_UPDATE):Medoo{
+        $this->writeDB->lock($type);
+        return $this;
+    }
+
+    /**
+     * @param array $values
+     * @param string|null $primaryKey
+     * @return bool
+     */
+    public function insertUpdate(array $values, string $primaryKey = null):bool{
+        try {
+            $this->writeDB->insertUpdate($this->table,$values,$primaryKey);
+            $ret = true;
+        }catch (\Exception $e){
+            $ret = false;
+            throw $e;
+        }
+        return $ret;
     }
 
 }
