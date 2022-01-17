@@ -6,7 +6,6 @@
  */
 
 namespace Sgenmi\eYaf\Model;
-use Medoo\Medoo;
 
 interface ModelInface
 {
