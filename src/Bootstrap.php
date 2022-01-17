@@ -112,7 +112,7 @@ class Bootstrap extends \Yaf\Bootstrap_Abstract
         try {
             $config = $this->getDBConfig(true);
             if($config){
-                \Yaf\Registry::set('_masterDB', new \Medoo\Medoo($config));
+                \Yaf\Registry::set('_masterDB', new \Sgenmi\eYaf\Model\Medoo($config));
             }
         }catch (\PDOException $e){
             echo '_masterDB:'.$e->getMessage().PHP_EOL;
@@ -121,7 +121,7 @@ class Bootstrap extends \Yaf\Bootstrap_Abstract
         try {
             $config = $this->getDBConfig(false);
             if($config){
-                \Yaf\Registry::set('_slaveDB', new \Medoo\Medoo($config));
+                \Yaf\Registry::set('_slaveDB', new \Sgenmi\eYaf\Model\Medoo($config));
             }
         }catch (\PDOException $e){
             echo '_slaveDB:'.$e->getMessage().PHP_EOL;
