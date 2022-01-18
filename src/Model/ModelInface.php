@@ -9,10 +9,6 @@ namespace Sgenmi\eYaf\Model;
 
 interface ModelInface
 {
-    public function getDb():Medoo;
-
-    public function setDb( Medoo $db);
-
     // 统一判断用户提交数据,省去重复判断
     public function checkField(array $data,array $field=[]);
 
