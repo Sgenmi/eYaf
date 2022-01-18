@@ -359,14 +359,14 @@ abstract class Model implements ModelInface
      * @param string $column
      * @param array $where
      * @param bool $is_slave
-     * @return int|string|null
+     * @return string|null
      */
-    public function sum($join, $column = null, $where = null, $is_slave = false)
+    public function sum($join, $column = null, $where = null, $is_slave = false):?string
     {
         if ($is_slave) {
-            return $this->readDB->sum($this->table, $join, $column, $where) + 0;
+            return $this->readDB->sum($this->table, $join, $column, $where);
         } else {
-            return $this->writeDB->sum($this->table, $join, $column, $where) + 0;
+            return $this->writeDB->sum($this->table, $join, $column, $where);
         }
     }
 
@@ -376,7 +376,7 @@ abstract class Model implements ModelInface
      * @param array $where
      * @return string|null
      */
-    public function avg($join, $column = null, $where = null)
+    public function avg($join, $column = null, $where = null): ?string
     {
         return $this->writeDB->avg($this->table, $join, $column, $where);
     }
@@ -387,7 +387,7 @@ abstract class Model implements ModelInface
      * @param array $where
      * @return string|null
      */
-    public function max($join, $column = null, $where = null)
+    public function max($join, $column = null, $where = null): ?string
     {
         return $this->writeDB->max($this->table, $join, $column, $where);
     }
@@ -398,7 +398,7 @@ abstract class Model implements ModelInface
      * @param array $where
      * @return string|null
      */
-    public function min($join, $column = null, $where = null)
+    public function min($join, $column = null, $where = null): ?string
     {
         return $this->writeDB->min($this->table, $join, $column, $where);
     }
