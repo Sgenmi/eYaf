@@ -30,13 +30,13 @@ interface ModelInface
 
     public function count($join = null, $column = null, $where = null, $is_slave = false);
 
-    public function sum(array $join, $column = null, $where = null, $is_slave = false);
+    public function sum($join, $column = null, $where = null, $is_slave = false);
 
-    public function avg(array $join, $column = null, $where = null);
+    public function avg($join, $column = null, $where = null);
 
-    public function max(array $join, $column = null, $where = null);
+    public function max($join, $column = null, $where = null);
 
-    public function min(array $join, $column = null, $where = null);
+    public function min($join, $column = null, $where = null);
 
     public function action(callable $actions);
 

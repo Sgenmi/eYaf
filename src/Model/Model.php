@@ -323,7 +323,7 @@ abstract class Model implements ModelInface
     }
 
     /**
-     * @param array $join
+     * @param array|string $join
      * @param array|string $columns
      * @param array $where
      * @param bool $is_slave
@@ -339,7 +339,7 @@ abstract class Model implements ModelInface
     }
 
     /**
-     * @param array $join
+     * @param array|string $join
      * @param string $column
      * @param array $where
      * @param bool $is_slave
@@ -355,13 +355,13 @@ abstract class Model implements ModelInface
     }
 
     /**
-     * @param array $join
+     * @param array|string $join
      * @param string $column
      * @param array $where
      * @param bool $is_slave
      * @return int|string|null
      */
-    public function sum(array $join, $column = null, $where = null, $is_slave = false)
+    public function sum($join, $column = null, $where = null, $is_slave = false)
     {
         if ($is_slave) {
             return $this->readDB->sum($this->table, $join, $column, $where) + 0;
@@ -371,23 +371,23 @@ abstract class Model implements ModelInface
     }
 
     /**
-     * @param array $join
+     * @param array|string $join
      * @param string $column
      * @param array $where
      * @return string|null
      */
-    public function avg(array $join, $column = null, $where = null)
+    public function avg($join, $column = null, $where = null)
     {
         return $this->writeDB->avg($this->table, $join, $column, $where);
     }
 
     /**
-     * @param array $join
+     * @param array|string $join
      * @param string $column
      * @param array $where
      * @return string|null
      */
-    public function max(array $join, $column = null, $where = null)
+    public function max($join, $column = null, $where = null)
     {
         return $this->writeDB->max($this->table, $join, $column, $where);
     }
@@ -398,7 +398,7 @@ abstract class Model implements ModelInface
      * @param array $where
      * @return string|null
      */
-    public function min(array $join, $column = null, $where = null)
+    public function min($join, $column = null, $where = null)
     {
         return $this->writeDB->min($this->table, $join, $column, $where);
     }
