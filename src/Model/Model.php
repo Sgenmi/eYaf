@@ -99,7 +99,7 @@ abstract class Model implements ModelInface
      * @return $this
      * @throws \Exception
      */
-    public function setDb(Medoo $db)
+    public function setDb(Medoo $db):Model
     {
         if(empty($db)){
             return $this;
@@ -406,16 +406,16 @@ abstract class Model implements ModelInface
 
     /**
      * @param callable $actions
-     * @param string $error
      * @return bool
      */
-    public function action(callable $actions,string &$error=null)
+    public function action(callable $actions):bool
     {
         $ret = true;
         try {
             $this->writeDB->action($actions);
         }catch (\Throwable $e){
             $error = $e->getTraceAsString();
+            $this->writeDB->error = $error;
             $ret =  false;
         }
         return $ret;
@@ -549,9 +549,9 @@ abstract class Model implements ModelInface
 
     /**
      * @param string $type
-     * @return Medoo
+     * @return Model
      */
-    public function lock(string $type = Medoo::LOCK_FOR_UPDATE):Medoo{
+    public function lock(string $type = Medoo::LOCK_FOR_UPDATE):Model{
         $this->writeDB->lock($type);
         return $this;
     }
