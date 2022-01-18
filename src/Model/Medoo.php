@@ -22,11 +22,9 @@ class Medoo extends catfanMedoo
 
     /**
      * @param string $type
-     * @return $this
      */
-    public function lock(string $type= self::LOCK_FOR_UPDATE){
+    public function lock(string $type= self::LOCK_FOR_UPDATE):void{
         $this->lock = $type;
-        return $this;
     }
 
     /**
@@ -38,6 +36,7 @@ class Medoo extends catfanMedoo
     public function exec(string $statement, array $map = [], callable $callback = null): ?PDOStatement
     {
         $statement = $statement. $this->lock;
+        $this->lock='';
         return parent::exec($statement,$map,$callback);
     }
 
