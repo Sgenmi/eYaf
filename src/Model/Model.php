@@ -7,6 +7,8 @@
 
 namespace Sgenmi\eYaf\Model;
 use Medoo\Raw;
+use Yaf\Exception;
+
 abstract class Model implements ModelInface
 {
     /**
@@ -60,14 +62,142 @@ abstract class Model implements ModelInface
     // ];
     // return $this->check_data($d);
     // }
+
+    // 这里可以设置读写分离
+    // 如果未设置从库，则readDB也是调用主库
+    /**
+     * @throws Exception
+     */
     public function __construct()
     {
-        // 这里可以设置读写分离
-        // 如果未设置从库，则readDB也是调用主库
-        $this->writeDB = \Yaf\Registry::get('_masterDB');
-        $this->readDB = \Yaf\Registry::get('_slaveDB');
-        $this->db = $this->writeDB;
+        if(extension_loaded('swoole')){
+            $coId = \Swoole\Coroutine::getCid();
+            if($coId>0){
+                $this->co_db($coId);
+            }else{
+                $this->fpm_db();
+            }
+        }else{
+            $this->fpm_db();
+        }
     }
+
+    /**
+     *  FPM , Swoole Coroutine=false
+     * @return void
+     * @throws Exception
+     */
+    private function fpm_db(){
+        $writeDB = \Yaf\Registry::get('_masterDB');
+        if(!$writeDB || !($writeDB instanceof Medoo)){
+            $masterConfig = $this->getDBConfig(true);
+            $writeDB = $this->getMedoo($masterConfig);
+            if(!$writeDB){
+                throw new Exception("master db connect fail");
+            }
+            \Yaf\Registry::set('_masterDB',$writeDB);
+        }
+        $readDB = \Yaf\Registry::get('_slaveDB');
+        if(!$readDB || !($readDB instanceof Medoo)){
+            $slaveConfig = $this->getDBConfig(false);
+            if($slaveConfig){
+                $readDB = $this->getMedoo($slaveConfig);
+            }else{
+                $readDB =  $writeDB;
+            }
+            if(!$readDB){
+                throw new Exception("slave db connect fail");
+            }
+            \Yaf\Registry::set('_slaveDB',$readDB);
+        }
+        $this->writeDB = $writeDB;
+        $this->readDB = $readDB;
+        $this->db= $this->writeDB;
+    }
+
+    /**
+     *  Swoole, Coroutine
+     * @param $coId
+     * @return void
+     * @throws Exception
+     */
+    private function co_db($coId){
+        $writeDB = Coroutine::getCon($coId);
+        //重新链接
+        if(!$writeDB || !($writeDB instanceof Medoo)){
+            $masterConfig = $this->getDBConfig(true);
+            $writeDB = $this->getMedoo($masterConfig);
+            if(!$writeDB){
+                throw new Exception("master db connect fail in coroutine");
+            }
+            Coroutine::setCon($coId,$writeDB);
+        }
+        $this->writeDB = $writeDB;
+        $this->readDB = $this->writeDB;
+        $this->db= $this->writeDB;
+        \Swoole\Coroutine::defer(function () use($coId,$writeDB){
+            $writeDB->pdo = null;
+            Coroutine::delCon($coId);
+        });
+    }
+
+    /**
+     * @param $config
+     * @return Medoo|null
+     */
+    private function getMedoo($config):?Medoo
+    {
+        try {
+            return new Medoo($config);
+        }catch (\PDOException $e){
+            echo '_masterDB:'.$e->getMessage().PHP_EOL;
+        }
+        return null;
+    }
+
+    /**
+     * 获取链接db,兼容升级
+     * @param bool $isMaster
+     * @return array
+     */
+    private function getDBConfig(bool $isMaster = false):array
+    {
+        $_config = \Yaf\Registry::get('_config');
+        $options=[];
+        if ($isMaster) {
+            if(is_object($_config)){
+                if(!empty($_config->database->params->master)){
+                    $options = $_config->database->params->master->toArray();
+                }
+            }else{
+                $options = $_config['database']['params']['master']??[];
+            }
+
+        } else {
+            // 如果没有设置从库，就直接选主库
+            if(is_object($_config)){
+                $slaveArr = $_config->database->params->slave->toArray();
+            }else{
+                $slaveArr = $_config['database']['params']['slave']??[];
+            }
+            if (!empty($slaveArr)) {
+                if(isset($slaveArr['host'])){
+                    $options = $slaveArr;
+                }else{
+                    $randKey = array_rand($slaveArr, 1);
+                    $options = $slaveArr[$randKey];
+                }
+            }
+        }
+        //兼容medoo 1.x 升级 2.x
+        if($options && isset($options['database_name'])){
+            $options['type'] = $options['database_type'];
+            $options['database'] = $options['database_name'];
+            $options['host'] = $options['server'];
+        }
+        return $options;
+    }
+
 
     /**
      * @param array $data
