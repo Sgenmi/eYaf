@@ -33,7 +33,5 @@ class Coroutine
 
     public static function delCon(int $coId):void{
         unset(self::$connects[$coId]);
-        print_r(self::$connects);
-
     }
 }
