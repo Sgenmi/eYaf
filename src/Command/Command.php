@@ -117,5 +117,12 @@ class Command extends \Symfony\Component\Console\Command\Command
         return new Medoo($options);
     }
 
+    /**
+     * @param mixed $val
+     * @return void
+     */
+    protected function log($val){
+        echo date("Y-m-d H:i:s").'==>'. (is_array($val)?json_encode($val):$val).PHP_EOL;
+    }
 
 }
