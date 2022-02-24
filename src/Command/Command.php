@@ -122,7 +122,7 @@ class Command extends \Symfony\Component\Console\Command\Command
      * @return void
      */
     protected function log($val){
-        echo date("Y-m-d H:i:s").'==>'. (is_array($val)?json_encode($val):$val).PHP_EOL;
+        echo date("Y-m-d H:i:s").'==>'. (is_array($val)?json_encode($val,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES):$val).PHP_EOL;
     }
 
 }
