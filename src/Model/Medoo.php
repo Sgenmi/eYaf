@@ -48,6 +48,7 @@ class Medoo extends catfanMedoo
      */
     public function insertUpdate(string $table, array $values, string $primaryKey = null): ?PDOStatement
     {
+        $this->debugLogs=[];
         $this->beginDebug();
         $this->insert($table,$values,$primaryKey);
         $logArr = $this->debugLog();
