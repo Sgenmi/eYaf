@@ -62,7 +62,7 @@ class Medoo extends catfanMedoo
         foreach ($columns as $v){
             $columnArr[] = "`{$v}`=values(`{$v}`)";
         }
-        $sql = $logArr[0]. ' ON DUPLICATE KEY UPDATE ' .implode(',',$columnArr);
+        $sql = end($logArr). ' ON DUPLICATE KEY UPDATE ' .implode(',',$columnArr);
         return  $this->exec($sql);
     }
 
