@@ -48,7 +48,6 @@ class Medoo extends catfanMedoo
      */
     public function insertUpdate(string $table, array $values, string $primaryKey = null): ?PDOStatement
     {
-        $this->debugLogs=[];
         $this->beginDebug();
         $this->insert($table,$values,$primaryKey);
         $logArr = $this->debugLog();
@@ -63,7 +62,7 @@ class Medoo extends catfanMedoo
         foreach ($columns as $v){
             $columnArr[] = "`{$v}`=values(`{$v}`)";
         }
-        $sql = $logArr[0]. ' ON DUPLICATE KEY UPDATE ' .implode(',',$columnArr);
+        $sql = end($logArr). ' ON DUPLICATE KEY UPDATE ' .implode(',',$columnArr);
         return  $this->exec($sql);
     }
 
