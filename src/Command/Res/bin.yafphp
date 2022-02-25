@@ -1,0 +1,23 @@
+<?php
+
+/**
+ * Created by IntelliJ IDEA.
+ * Author: sgenmi
+ * Date: 2020/11/20 下午20:01
+ * Email: 150560159@qq.com
+ */
+
+ini_set('yaf.name_suffix', 0);
+ini_set('yaf.name_separator', '\\');
+ini_set('yaf.use_spl_autoload', 1);
+
+define('DEVELOPMENT', true);
+define("BASE_PATH", __DIR__);
+define("APP_PATH", BASE_PATH . '/application');
+define("LOG_PATH", APP_PATH . "/log");
+define("IS_MASTER_SLAVE", false);
+$config = require APP_PATH."/conf/config.php";
+$app = new Yaf\Application( $config );
+set_time_limit(0);
+$params = array();
+$app->bootstrap()->execute( array(new \Sgenmi\eYaf\Command\Command(),'start'),$params );

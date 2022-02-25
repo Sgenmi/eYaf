@@ -19,14 +19,14 @@ class Redis implements CacheIface
      * @var \Redis
      */
     private $redis;
-    public function __construct($configDefault="app"){
+    public function __construct(string $configDefault="app"){
         $this->configDefault = $configDefault;
         $this->connect();
     }
-    private function connect() {
+    private function connect():void {
         $gCofnig = \Yaf\Registry::get('_config');
         $name = $this->configDefault;
-        $config = $gCofnig->redis->$name;
+        $config = $gCofnig['redis'][$name]??[];
         if(!$config) {
             throw new Exception("Can't find $name configuration with redis");
         }
@@ -40,8 +40,10 @@ class Redis implements CacheIface
         if(isset($config['auth']) && $config['auth']){
             $redis->auth($config['auth']);
         }
+        if(isset($config['db']) && $config['db']){
+            $redis->select($config['db']);
+        }
         $this->redis = $redis;
-        return ;
     }
 
     /**
