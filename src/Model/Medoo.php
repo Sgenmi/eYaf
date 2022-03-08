@@ -35,9 +35,28 @@ class Medoo extends catfanMedoo
      */
     public function exec(string $statement, array $map = [], callable $callback = null): ?PDOStatement
     {
-        $statement = $statement. $this->lock;
-        $this->lock='';
-        return parent::exec($statement,$map,$callback);
+        try {
+            $statement = $statement. $this->lock;
+            $this->lock='';
+            $res =  parent::exec($statement,$map,$callback);
+        }catch (\PDOException $e) {
+            // 超时重链
+            if($e->getCode()=='HY000'){
+                //协程下，删除保存原链接
+                if(extension_loaded('swoole')){
+                    $coId = \Swoole\Coroutine::getCid();
+                    if($coId>0){
+                        Coroutine::delCon($coId);
+                    }
+                }
+                $config = Model::getDBConfig(true);
+                parent::__construct($config);
+                $res =  parent::exec($statement,$map,$callback);
+            }else{
+                throw $e;
+            }
+        }
+        return $res;
     }
 
     /**

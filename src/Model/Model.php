@@ -160,7 +160,7 @@ abstract class Model implements ModelInface
      * @param bool $isMaster
      * @return array
      */
-    private function getDBConfig(bool $isMaster = false):array
+    public static function getDBConfig(bool $isMaster = false):array
     {
         $_config = \Yaf\Registry::get('_config');
         $options=[];
