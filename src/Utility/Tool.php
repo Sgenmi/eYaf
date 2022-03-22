@@ -88,4 +88,12 @@ class Tool
         return $urlArr;
     }
 
+    /**
+     * 检测是否 swoole环境下,协程运行
+     * @return bool
+     */
+    public static function isSwooleCo():bool{
+        return extension_loaded('swoole') && (\Swoole\Coroutine::getCid()>-1);
+    }
+
 }
