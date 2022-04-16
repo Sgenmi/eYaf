@@ -544,8 +544,7 @@ abstract class Model implements ModelInface
         try {
             $this->writeDB->action($actions);
         }catch (\Throwable $e){
-            $error = $e->getTraceAsString();
-            $this->writeDB->error = $error;
+            $this->writeDB->error = $e->getMessage();
             $ret =  false;
         }
         return $ret;
