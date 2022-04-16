@@ -10,7 +10,6 @@
 namespace Sgenmi\eYaf\Command\Action;
 
 use Sgenmi\eYaf\Command\Command;
-use Sgenmi\eYaf\Config;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -18,16 +17,6 @@ use Symfony\Component\Console\Question\ConfirmationQuestion;
 
 class Create extends Command
 {
-    /**
-     * @var InputInterface
-     */
-    private $input;
-
-    /**
-     * @var OutputInterface
-     */
-    private $output;
-
     /**
      * @var string
      */
@@ -46,7 +35,7 @@ class Create extends Command
     /**
      * @var array
      */
-    private $descInfo=[
+    protected $descInfo=[
         'create:controller'=>[
             'desc'=>'create a new controller class',
             'help'=>'555'
@@ -84,6 +73,7 @@ class Create extends Command
 
     protected function configure()
     {
+        parent::configure();
         $this->addArgument("name",InputArgument::REQUIRED,'create file name');
     }
 
@@ -95,8 +85,6 @@ class Create extends Command
 
     public function execute(InputInterface $input, OutputInterface $output)
     {
-        $this->input = $input;
-        $this->output = $output;
         $fileName = $this->input->getArgument('name');
         if(!$fileName){
             return 0;

@@ -12,19 +12,63 @@ namespace Sgenmi\eYaf\Command;
 use Medoo\Medoo;
 use Sgenmi\eYaf\Command\Action\Create;
 use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 
 class Command extends \Symfony\Component\Console\Command\Command
 {
     protected $config;
+    /**
+     * @var InputInterface
+     */
+    protected $input;
+
+    /**
+     * @var OutputInterface
+     */
+    protected $output;
+
+    /**
+     * @var array
+     */
+    protected $descInfo;
 
     protected function initialize(InputInterface $input, OutputInterface $output)
     {
-        $this->config = \Yaf\Registry::get('_config');
+        $this->input = $input;
+        $this->output = $output;
     }
 
+    protected function configure()
+    {
+        $this->config = \Yaf\Registry::get('_config');
+        $arr = $this->descInfo[$this->getName()] ?? [];
+        $this->setDescription($this->descInfo[$this->getName()]['desc'] ?? '');
+        if (!$arr) {
+            return;
+        }
+        if (isset($arr['argument']) && $arr['argument']) {
+            foreach ($arr['argument'] as $k => $v) {
+                $this->addArgument($k, $v['mode'] ?? InputArgument::OPTIONAL, $v['desc'] ?? '',$v['default']??null);
+            }
+        }
+        if (isset($arr['option']) && $arr['option']) {
+            foreach ($arr['option'] as $k => $v) {
+                $this->addOption($k, $v['short_alias']??null, $v['mode'] ?? InputOption::VALUE_OPTIONAL, $v['desc'] ?? '',$v['default']??null);
+            }
+        }
+    }
+
+    //信号的定义
+    protected function execute(InputInterface $input, OutputInterface $output)
+    {
+        $action = explode(':', $this->getName())[1];
+        $this->$action();
+        return 0;
+    }
     public function start(){
        $application = new Application();
        $allCommand = $this->getAllCommand();
