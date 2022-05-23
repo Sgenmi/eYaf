@@ -30,12 +30,13 @@ class Install
     private function createProjectDir(){
         $dirs=[
             'application'=>['Bootstrap.yafphp'],
-            'application/conf'=>'config.yafphp',
+            'application/conf'=>['config.yafphp','command.yafphp'],
             'application/controllers'=>['IndexController.yafphp','ErrorController.yafphp'],
             'application/library'=>['Funs.yafphp','Admin.yafphp','Web.yafphp','Singleton.yafphp'],
             'application/models'=>'UserModel.yafphp',
             'application/modules'=>'.gitkeep',
             'application/plugins'=>'.gitkeep',
+            'application/commands'=>'Test.yafphp',
             'application/repositorys'=>'IndexRepository.yafphp',
             'application/services'=>'IndexService.yafphp',
             'public'=>'index.yafphp'

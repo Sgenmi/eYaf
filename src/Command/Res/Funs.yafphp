@@ -1,2 +1,17 @@
 <?php
-    //公共方法 写在这里
+
+    /**
+     * @param int $limit
+     * @param int $maxLimit
+     * @return int
+     */
+    function fn_get_limit(int $limit = 0, int $maxLimit = 100): int
+    {
+        $ret = $limit;
+        if ($limit < 1) {
+            $ret = 1;
+        } elseif ($limit > $maxLimit) {
+            $ret = $maxLimit;
+        }
+        return $ret;
+    }
