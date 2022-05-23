@@ -18,7 +18,7 @@ class Test extends Command
 
     protected $descInfo = [
         'test:us' => [
-            'desc' => '测试 desc',
+            'desc' => '测试 us',
             'help' => '测试 help',
             //使用 如 php bin.php test:us 2022-02-01 2022-02-02  [注意参数有顺序]
             //  echo $this->input->getArgument('s');  //2022-02-01
@@ -27,12 +27,12 @@ class Test extends Command
                 's' => [
                     'mode' => InputArgument::OPTIONAL,
                     'desc' => '开始时间',
-                    'default'=>date("Y-m-d")
+                    'default'=>''
                 ],
                 'e' => [
                     'mode' => InputArgument::OPTIONAL,
                     'desc' => '结束时间',
-                    'default'=>date("Y-m-d")
+                    'default'=>''
                 ]
             ],
             //使用 如 php bin.php test:us [-s 2022-02-01 | --start_time=2022-02-01]  [参数可选，无顺序]
@@ -43,19 +43,19 @@ class Test extends Command
                     'mode' => InputOption::VALUE_OPTIONAL,
                     'desc' => '开始时间',
                     'short_alias' => 's', // -s=xxxx
-                    'default'=>date("Y-m-d")
+                    'default'=>''
                 ],
                 'end_time' => [
                     'mode' => InputOption::VALUE_OPTIONAL,
                     'desc' => '结束时间',
                     'short_alias' => 'e', // -e=xxxx
-                    'default'=>date("Y-m-d")
+                    'default'=>''
                 ]
             ],
         ],
 
-         'test:us' => [
-              'desc' => '测试 desc',
+         'test:ms' => [
+              'desc' => '测试 ms',
               'help' => '测试 help',
           ]
 
