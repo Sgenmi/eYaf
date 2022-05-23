@@ -9,12 +9,11 @@
 
 namespace Controller;
 
-use Sgenmi\eYaf\Http\Controller;
 
 use Model\User;
 use Repository\IndexRepository;
 
-class Index extends Controller{
+class Index extends \Web{
 
     /**
      * @var IndexRepository
