@@ -45,26 +45,23 @@ return [
     'database'=>[
         'params'=>[
             'master'=>[
-                'host'=> '192.168.2.222',
+                'host'=> '127.0.0.1',
                 'username'=>'root',
-                'password'=>'Ezsv9499',
+                'password'=>'123456',
                 'type'=>'mysql',
-                'database'=>'work_weixin',
+                'database'=>'dbname',
                 'charset'=>'utf8mb4',
                 'port'=>3306,
-                'prefix'=>'ww_'
+                'prefix'=>''
             ]
         ]
     ],
     'redis'=>[
         'app'=>[
-            'host'=>'192.168.2.222',
-            'port'=>6701,
+            'host'=>'127.0.0.1',
+            'port'=>6379,
             'auth'=>''
         ]
-    ],
-    'guide'=>[
-        'host'=>'http://192.168.2.142:810'
     ],
     'upload'=>[
         'host'=>'',
@@ -72,6 +69,5 @@ return [
     ],
     'imghost' => 'http://192.168.2.4:5109',
     'jump_domain' => 'http://192.168.2.222:xxxx',
-    'work_weixin_service_token' => 'dfrerfsdfrfjiw2383frf'
 
 ];
