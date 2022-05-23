@@ -1,0 +1,13 @@
+<?php
+
+/**
+ * Created by IntelliJ IDEA.
+ * Author: sgenmi
+ * Date: 2022/5/23 6:35 PM
+ * Email: 150560159@qq.com
+ */
+
+ return [
+     new \Command\Test('test:us'),
+     new \Command\Test('test:ms'),
+ ];

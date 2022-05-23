@@ -71,3 +71,17 @@ server {
 
 
 ```
+
+
+# ⼆. 数据模型：Medoo 
+
+```php
+ //注： 采⽤开源medoo作为框架的model，兼容medoo所有语法
+
+```
+## Medoo 文档
+
+  官网文档： [https://medoo.in/](https://medoo.in/)
+
+  特别感谢Medoo作者，开源这么小巧 好用的类库 
+
