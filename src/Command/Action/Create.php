@@ -9,6 +9,7 @@
 
 namespace Sgenmi\eYaf\Command\Action;
 
+use Exception;
 use Sgenmi\eYaf\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -38,7 +39,7 @@ class Create extends Command
     protected $descInfo=[
         'create:controller'=>[
             'desc'=>'create a new controller class',
-            'help'=>'555'
+            'help'=>"Create a normal controller or module controller; \nValid format when creating a module controller such as :(module's name/controller's name)"
         ],
         'create:model'=>[
             'desc'=>'create a new model class',
@@ -85,6 +86,9 @@ class Create extends Command
 
     public function execute(InputInterface $input, OutputInterface $output)
     {
+        if(defined('APP_PATH')){
+            throw new Exception("BASE_PATH 未定义");
+        }
         $fileName = $this->input->getArgument('name');
         if(!$fileName){
             return 0;
@@ -96,9 +100,52 @@ class Create extends Command
     }
 
     private function controller(){
+        $urlPath = '';
+        if(strpos($this->fileName,'/')===false){
+            $this->fileName = 'index/'.$this->fileName;
+        }
+        $filePathArr = explode('/',$this->fileName);
+        $filePathArr = array_map(function ($v){
+            return ucfirst(strtolower($v));
+        },$filePathArr);
+        $modulesName = $filePathArr[0]?:"index";
+        //如果是默认 $modulesName=index
+        if(strtolower($modulesName)=='index'){
+            unset($filePathArr[0]);
+        }
+        $bool = $this->checkIsHaveModule($modulesName);
+        if($bool){
+            unset($filePathArr[0]);
+            $className = implode('_',$filePathArr);
+            $fileName = array_pop($filePathArr);
+            $urlPath = sprintf('/%s/%s/index',$modulesName,$className);
+            $dirPath = APP_PATH.sprintf('/modules/%s/controllers/%s', $modulesName,
+                    ($filePathArr?implode('/',$filePathArr):'')
+                );
+            $this->createDir($dirPath);
+            $file = $dirPath.'/'.$fileName.'.php';
+            if(is_file($file)){
+                $this->output->writeln($file.' is exist');
+                return;
+            }
+        }else{
+            $className = implode('_',$filePathArr);
+            $fileName = array_pop($filePathArr);
+
+            $urlPath = sprintf('/%s/index',$className);
+            $dirPath = APP_PATH.sprintf('/controllers/%s', ($filePathArr?implode('/',$filePathArr):''));
+            $this->createDir($dirPath);
+            $file = $dirPath.'/'.$fileName.'.php';
+        }
+
+        $file = str_replace('//','/',$file);
+        if(is_file($file)){
+            $this->output->writeln($file.' is exist');
+            return;
+        }
+        $urlPath = strtolower($urlPath);
 
         $str =<<<EOF
-
 <?php
 
 /**
@@ -108,21 +155,23 @@ class Create extends Command
 
 namespace Controller;
 
-class {$this->fileName} extends \Web {
+class {$className} extends \Web {
 
     public function init(){
         parent::init();
     }
-    
+    /**
+     * queryPath: {$urlPath}
+     */
+   
     public function indexAction(){
-    
+        echo 'index';
     }
-
 }
 
 EOF;
-
-        echo $str;
+        file_put_contents($file,$str);
+        $this->output->writeln($file);
 
     }
     
@@ -150,6 +199,27 @@ EOF;
 
     private function service(){
 
+    }
+
+    private function checkIsHaveModule($name):bool{
+        if('index'==strtoupper($name)){
+            return false;
+        }
+        $modulesPath = APP_PATH.'/modules/'.ucfirst(strtoupper($name));
+        if(is_dir($modulesPath)){
+            $question = new ConfirmationQuestion('Discover existing modules and create them in the module  default:Y; [Y|N]? ',true);
+            $helper = $this->getHelper("question");
+            if($helper->ask($this->input,$this->output,$question)){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private function createDir(string $dir):void{
+        if(!is_dir($dir)){
+            mkdir($dir,0755,true);
+        }
     }
 
 }
