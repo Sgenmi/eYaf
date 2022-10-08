@@ -33,7 +33,7 @@ class Bootstrap extends \Yaf\Bootstrap_Abstract
         \Yaf\Loader::import('Funs.php');
         $loader = \Yaf\Loader::getInstance(APP_PATH.'/library');
         $loader->registerNamespace("\Service", APP_PATH."/services/");
-        $loader->registerNamespace("\Repository",APP_PATH."/repositorys/");
+        $loader->registerNamespace("\Repository",APP_PATH."/repositorys/"); //repositories
         $loader->registerNamespace("\Command",APP_PATH."/commands/");
     }
 
@@ -45,7 +45,7 @@ class Bootstrap extends \Yaf\Bootstrap_Abstract
             foreach ($modules as $v){
                 $loader->registerNamespace(sprintf("\%s\Model",$v), APP_PATH."/modules/{$v}/models");
                 $loader->registerNamespace(sprintf("\%s\Service",$v), APP_PATH."/modules/{$v}/services");
-                $loader->registerNamespace(sprintf("\%s\Command",$v), APP_PATH."/modules/{$v}/command");
+                $loader->registerNamespace(sprintf("\%s\Command",$v), APP_PATH."/modules/{$v}/commands");
             }
         }
     }
