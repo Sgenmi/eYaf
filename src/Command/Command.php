@@ -90,6 +90,7 @@ class Command extends \Symfony\Component\Console\Command\Command
             new Create('create:plugin'),
             new Create('create:service'),
             new Create('create:repository'),
+            new Create('create:command'),
         ];
         if(defined('APP_PATH')){
             $cmdConfFile =  APP_PATH.'/conf/command.php';
@@ -102,7 +103,7 @@ class Command extends \Symfony\Component\Console\Command\Command
         $modules= \Yaf\Registry::get('_modules');
         if($modules && is_array($modules)){
             foreach ($modules as $v){
-                $cmdConfFile =  APP_PATH."/modules/{$v}/command/command.php";
+                $cmdConfFile =  APP_PATH."/modules/{$v}/commands/command.php";
                 if(is_file($cmdConfFile)){
                     $cmdConfArr = require $cmdConfFile;
                     $commands = array_merge($commands,$cmdConfArr);
