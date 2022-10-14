@@ -1,0 +1,90 @@
+<?php
+
+namespace Model;
+use Sgenmi\eYaf\Model\Model;
+
+abstract class AbstractModel extends Model
+{
+    public function getTablePrefix():string {
+        $config = \Yaf\Registry::get('_config');
+        $prefix = $config['database']['params']['master']['prefix'] ?? '';
+        return $prefix;
+    }
+
+    public function getCompleteTable():string {
+        $prefix = $this->getTablePrefix();
+        return $prefix.$this->table;
+    }
+
+    /**
+     * @param int $page
+     * @param int $size
+     * @param array $where
+     * @param array|string $field
+     * @return array
+     */
+    public function getList(int $page=1,int $size=20,array $where=[],array|string $field=[]):array
+    {
+        if(is_string($field) && $field!='*'){
+            $field = explode(',',$field);
+        }
+        if(!$field){
+            $field="*";
+        }
+        $_where = $where;
+        unset($_where['ORDER']);
+        if(isset($_where['GROUP'])){
+            $distinctField = is_array($_where['GROUP'])?implode(',',$_where['GROUP']):$_where['GROUP'];
+            unset($_where['GROUP']);
+            $count = $this->get(['n'=>$this->raw(sprintf('COUNT(DISTINCT %s )',$distinctField))],$_where)['n']??0;
+        }else{
+            $count = $this->count($_where);
+        }
+        if(!$count){
+            return ['count'=>0,'list'=>[]];
+        }
+        if($size !=-1 ){
+            if($size<=0) {
+                $size = 20;
+            }
+            $where['LIMIT']=[($page-1)*$size,$size];
+        }
+
+        $list = $this->select($field,$where);
+        return  ['count'=>$count,'list'=>$list];
+    }
+
+    //状态开关按钮
+    public function switch(int $id, int $status) : bool
+    {
+        $has = $this->has(['id'=>$id]);
+        if (!$has) {
+            return false;
+        }
+
+        $up = [
+            'update_time' => time(),
+            'status' => $status,
+        ];
+        $this->update($up, ['id'=>$id]);
+        return true;
+    }
+
+    /**
+     * @param array $fields
+     * @return array
+     */
+    static function getValidations(array $fields):array{
+        if(!$fields){
+            return static::$validations;
+        }
+        $ret =[];
+        foreach ($fields as $v){
+            if(isset(static::$validations[$v])){
+                $ret[$v] = static::$validations[$v];
+            }
+        }
+        return $ret;
+    }
+
+}
