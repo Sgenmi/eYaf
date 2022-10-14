@@ -46,6 +46,7 @@ class Bootstrap extends \Yaf\Bootstrap_Abstract
                 $loader->registerNamespace(sprintf("\%s\Model",$v), APP_PATH."/modules/{$v}/models");
                 $loader->registerNamespace(sprintf("\%s\Service",$v), APP_PATH."/modules/{$v}/services");
                 $loader->registerNamespace(sprintf("\%s\Command",$v), APP_PATH."/modules/{$v}/commands");
+                $loader->registerNamespace(sprintf("\%s\Repository",$v), APP_PATH."/modules/{$v}/repositorys");
             }
         }
     }
