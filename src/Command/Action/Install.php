@@ -33,7 +33,7 @@ class Install
             'application/conf'=>['config.yafphp','command.yafphp'],
             'application/controllers'=>['IndexController.yafphp','ErrorController.yafphp'],
             'application/library'=>['Funs.yafphp','Admin.yafphp','Web.yafphp','Singleton.yafphp'],
-            'application/models'=>'UserModel.yafphp',
+            'application/models'=>['UserModel.yafphp','AbstractModel.yafphp'],
             'application/modules'=>'.gitkeep',
             'application/plugins'=>'.gitkeep',
             'application/commands'=>'Test.yafphp',
