@@ -10,7 +10,7 @@
 namespace Controller;
 
 
-use Model\User;
+use Model\UserModel;
 use Repository\IndexRepository;
 
 class Index extends \Web{
@@ -33,7 +33,7 @@ class Index extends \Web{
     // /index/userinfo
     public function userInfoAction(){
         $id = $this->getParam('id',0);
-        $model = new User();
+        $model = new UserModel();
         $res = $model->getUserInfo($id);
         var_dump($res);
     }

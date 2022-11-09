@@ -56,7 +56,7 @@ class Install
                     }else{
                         $getContent = file_get_contents($resPath.DIRECTORY_SEPARATOR.$vv);
                     }
-                    file_put_contents($dir.DIRECTORY_SEPARATOR.str_replace(['Controller','Model'],'',str_replace('.yafphp','.php',$vv)),$getContent);
+                    file_put_contents($dir.DIRECTORY_SEPARATOR.str_replace(['Controller'],'',str_replace('.yafphp','.php',$vv)),$getContent);
                     if($vv=='index.yafphp' || $vv=='config.yafphp'){
                         file_put_contents($dir.DIRECTORY_SEPARATOR.str_replace('.yafphp','.php',$vv).'.bak',$getContent);
                     }

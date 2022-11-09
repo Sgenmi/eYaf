@@ -9,7 +9,7 @@
 
 namespace Model;
 
-class User extends AbstractModel
+class UserModel extends AbstractModel
 {
     public $table = 'user';
     public function getUserInfo(int $id){
