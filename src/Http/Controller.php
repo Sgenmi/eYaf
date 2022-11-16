@@ -67,12 +67,12 @@ abstract class Controller extends \Yaf\Controller_Abstract
      * @param array $data
      * @return bool
      */
-    protected function Json( int $code = 0, string $message = '', array $data = [])
+    protected function Json( int $code = 0, string $message = '', array $data =[])
     {
         $r_data = [
             'code' => $code,
             'msg' => $message,
-            'data' => $data
+            'data' => $data?:new \stdClass()
         ];
         $json = json_encode($r_data);
         if(Tool::isSwooleCo() && ($responseSw = \Co::getContext()['response'])){
