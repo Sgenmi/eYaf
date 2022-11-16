@@ -12,19 +12,21 @@ namespace Controller;
 
 class Error extends \Web
 {
-    public function errorAction(\Throwable $exception){
-        $straceStr = $exception->getTraceAsString();
-        $code = $exception->getCode();
-        if(defined('DEVELOPMENT') && !DEVELOPMENT){
-            // 正式环境，可以记录错误日志，暂不提供Log,可以自行增加
-           // \Log::error($straceStr,'系统异常');
-            return $this->Json($code,'system error');
+    public function errorAction(\Throwable $exception=null){
+            if(! $exception instanceof \Throwable){
+                return $this->Json(999999,'异常调用');
+            }
+            $code = $exception->getCode();
+            $message = $exception->getMessage();
+            if(!is_numeric($code) || $code==0){
+                $code = 1;
+            }
+            if(defined('DEVELOPMENT') && !DEVELOPMENT){
+              //  \Log::error($message.PHP_EOL.$exception->getTraceAsString());
+                return $this->Json($code,$message);
+            }
+            return $this->Json(1,$message,$exception->getTrace());
         }
-        if($code!=-1){
-            $code++;
-        }
-        return $this->Json($code,$straceStr);
-    }
 
 
 }
