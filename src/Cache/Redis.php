@@ -7,6 +7,7 @@
 
 namespace Sgenmi\eYaf\Cache;
 
+use Sgenmi\eYaf\Utility\Tool;
 use Yaf\Exception;
 
 /**
@@ -15,6 +16,7 @@ class Redis implements CacheIface
 {
     private $configDefault='app';
     private $config=[];
+    private static $connect=[];
     /**
      * @var \Redis
      */
@@ -23,7 +25,27 @@ class Redis implements CacheIface
         $this->configDefault = $configDefault;
         $this->connect();
     }
-    private function connect():void {
+
+    private function connect(){
+        $coId=0;
+        if(Tool::isSwooleCo()){
+            $coId = \Swoole\Coroutine::getCid();
+            \Swoole\Coroutine\defer(function ()use($coId){
+                unset(self::$connect[$coId]);
+            });
+        }
+        if(!isset(self::$connect[$coId][$this->configDefault])){
+            try {
+                $this->reconnect();
+                self::$connect[$coId][$this->configDefault] = $this->redis;
+            }catch (\Throwable $e){
+                unset(self::$connect[$coId][$this->configDefault]);
+            }
+        }else{
+            $this->redis = self::$connect[$coId][$this->configDefault];
+        }
+    }
+    private function reconnect():void {
         $gCofnig = \Yaf\Registry::get('_config');
         $name = $this->configDefault;
         $config = $gCofnig['redis'][$name]??[];

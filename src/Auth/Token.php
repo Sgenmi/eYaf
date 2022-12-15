@@ -8,6 +8,7 @@
 namespace Sgenmi\eYaf\Auth;
 
 use Sgenmi\eYaf\Cache\Redis;
+use Sgenmi\eYaf\Utility\Tool;
 
 class Token
 {
@@ -119,9 +120,21 @@ class Token
             if(!$redis->exists($delKey)){
                 return true;
             }
-            return $redis->del($key);
+            return $redis->del($delKey);
         }
 
+    }
+
+    /**
+     * @return string
+     */
+    public static function  createToken(): string {
+        $ip =  Tool::getClientIp();
+        $uuid = session_create_id();
+        if(!$uuid){
+            $uuid = Tool::character(28);
+        }
+        return md5(microtime(true) . $ip . $uuid);
     }
 
 }
