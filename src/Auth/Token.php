@@ -120,7 +120,7 @@ class Token
             if(!$redis->exists($delKey)){
                 return true;
             }
-            return $redis->del($key);
+            return $redis->del($delKey);
         }
 
     }
