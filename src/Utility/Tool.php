@@ -49,7 +49,7 @@ class Tool
      */
     public static function centToYuan(int $val):float
     {
-        return sprintf("%.2f", $val / 100);
+        return floatval(bcdiv($val,100,2));
     }
     /**
      * @desc 元转分
@@ -58,7 +58,7 @@ class Tool
      */
     public static function yuanToCent(float $val):int
     {
-        return (int)($val * 100);
+        return intval(bcmul($val, 100));
     }
 
     public static function  parseUrl($url){
