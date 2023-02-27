@@ -131,14 +131,14 @@ abstract class Model implements ModelInface
                 throw new Exception("master db connect fail in coroutine");
             }
             Coroutine::setCon($coId,$writeDB);
+            \Swoole\Coroutine::defer(function () use($coId,$writeDB){
+                $writeDB->pdo = null;
+                Coroutine::delCon($coId);
+            });
         }
         $this->writeDB = $writeDB;
         $this->readDB = $this->writeDB;
         $this->db= $this->writeDB;
-        \Swoole\Coroutine::defer(function () use($coId,$writeDB){
-            $writeDB->pdo = null;
-            Coroutine::delCon($coId);
-        });
     }
 
     /**
