@@ -30,14 +30,16 @@ class Redis implements CacheIface
         $coId=0;
         if(Tool::isSwooleCo()){
             $coId = \Swoole\Coroutine::getCid();
-            \Swoole\Coroutine\defer(function ()use($coId){
-                unset(self::$connect[$coId]);
-            });
         }
         if(!isset(self::$connect[$coId][$this->configDefault])){
             try {
                 $this->reconnect();
                 self::$connect[$coId][$this->configDefault] = $this->redis;
+                if($coId>0){
+                    \Swoole\Coroutine\defer(function ()use($coId){
+                        unset(self::$connect[$coId]);
+                    });
+                }
             }catch (\Throwable $e){
                 unset(self::$connect[$coId][$this->configDefault]);
             }
