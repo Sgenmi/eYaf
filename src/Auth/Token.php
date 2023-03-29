@@ -49,6 +49,9 @@ class Token
         if(defined('HEADER_TOKEN') && HEADER_TOKEN ){
             $headerToken = HEADER_TOKEN;
         }
+        if(Tool::isSwooleCo()){
+            return  \Co::getContext()['header'][strtolower($headerToken)]??'';
+        }
         return (new \Yaf\Request\Http())->getServer("HTTP_".strtoupper($headerToken), '');
     }
 
