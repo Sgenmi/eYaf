@@ -1,0 +1,33 @@
+<?php
+
+/**
+ * Created by IntelliJ IDEA.
+ * Author: sgenmi
+ * Date: 2020/9/1 下午1:36
+ * Email: 150560159@qq.com
+ */
+
+require BASE_PATH."/vendor/sgenmi/eyaf/src/Bootstrap.php";
+
+class Bootstrap extends \Sgenmi\eyaf\Bootstrap
+{
+    //Custom route
+    public function _initRoutes(\Yaf\Dispatcher $dispatcher)
+    {
+        $router = $dispatcher->getRouter();
+//        $router->addRoute('用户登录', new \Yaf\Route\Rewrite('/login', [
+//            "module" => "index",
+//            "controller" => "member",
+//            "action" => "login"
+//        ]));
+    }
+
+    //Custom plugin
+    public function _initPlugins(\Yaf\Dispatcher $dispatcher)
+    {
+        //$auth = new \Plugin\Auth();
+        //$dispatcher->registerPlugin($auth);
+    }
+
+
+}

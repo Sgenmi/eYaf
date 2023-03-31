@@ -8,10 +8,11 @@
 namespace Sgenmi\eYaf\Auth;
 
 use Sgenmi\eYaf\Cache\Redis;
+use Sgenmi\eYaf\Utility\Tool;
 
 class Token
 {
-    const USER_TOKEN ='s:u:token:';
+    const USER_TOKEN ='k:u:token:';
     const USER_ID_SET = 'z:uid:token:';
 
     /**
@@ -39,9 +40,19 @@ class Token
         return $info;
     }
 
+    /**
+     * @return mixed
+     */
     public static function getToken()
     {
-        return (new \Yaf\Request\Http())->getServer("HTTP_ACCESS_TOKEN", '');
+        $headerToken= "TOKEN";
+        if(defined('HEADER_TOKEN') && HEADER_TOKEN ){
+            $headerToken = HEADER_TOKEN;
+        }
+        if(Tool::isSwooleCo()){
+            return  \Co::getContext()['header'][strtolower($headerToken)]??'';
+        }
+        return (new \Yaf\Request\Http())->getServer("HTTP_".strtoupper($headerToken), '');
     }
 
     /**
@@ -68,6 +79,27 @@ class Token
 
 
     /**
+     * @param string $token
+     * @param array $data
+     * @param int $expire
+     * @param string $key
+     * @return bool
+     */
+    public static function setToken(string $token, array $data, int $expire=864000, string $key='admin'):bool {
+
+        if(!isset($data['id'])){
+            throw new \Yaf\Exception('setToken: No id field was found in the data array');
+        }
+        if(empty($data['id'])){
+            throw new \Yaf\Exception('setToken: Id field cannot be empty');
+        }
+        $redis = new Redis();
+        $redis->set(self::USER_TOKEN .$key.':'.$token, json_encode($data), $expire);
+        $redis->zAdd(self::USER_ID_SET.$key.':'.$data['id'],1,$token);
+        return true;
+    }
+
+    /**
      * @param int $uid
      * @param string $key
      * @return bool
@@ -91,9 +123,21 @@ class Token
             if(!$redis->exists($delKey)){
                 return true;
             }
-            return $redis->del($key);
+            return $redis->del($delKey);
         }
 
+    }
+
+    /**
+     * @return string
+     */
+    public static function  createToken(): string {
+        $ip =  Tool::getClientIp();
+        $uuid = session_create_id();
+        if(!$uuid){
+            $uuid = Tool::character(28);
+        }
+        return md5(microtime(true) . $ip . $uuid);
     }
 
 }

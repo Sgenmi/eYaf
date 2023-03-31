@@ -1,0 +1,18 @@
+<?php
+declare(strict_types=1);
+
+/**
+ * Created by IntelliJ IDEA.
+ * Author: sgenmi
+ * Date: 2021/3/22 上午10:21
+ * Email: 150560159@qq.com
+ */
+namespace Service;
+
+class IndexService
+{
+    public function getStr():string {
+        return "index";
+    }
+
+}

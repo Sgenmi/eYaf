@@ -9,6 +9,8 @@
 
 namespace Sgenmi\eYaf\Http;
 
+use Sgenmi\eYaf\Utility\Tool;
+
 abstract class Controller extends \Yaf\Controller_Abstract
 {
     protected $isAjax = false;
@@ -59,66 +61,89 @@ abstract class Controller extends \Yaf\Controller_Abstract
     }
 
     /**
+     * 返回false 因为yaf在控制器中返回false时，不渲染模板
      * @param int $code
      * @param string $message
      * @param array $data
      * @return bool
      */
-    protected function Json( int $code = 0, string $message = '', array $data = [])
+    protected function Json( int $code = 0, string $message = '', array $data =[])
     {
         $r_data = [
             'code' => $code,
             'msg' => $message,
-            'data' => $data
+            'data' => $data?:new \stdClass()
         ];
-        $response = $this->getResponse();
-        $response->setHeader( 'Content-Type', 'application/json; charset=utf-8' );
-        $response->setBody(json_encode($r_data));
+        $json = json_encode($r_data);
+        if(Tool::isSwooleCo() && ($responseSw = \Co::getContext()['response'])){
+            $responseSw->setHeader('Content-Type','application/json; charset=utf-8');
+            echo $json;
+        }else{
+            $response = $this->getResponse();
+            $response->setHeader( 'Content-Type', 'application/json; charset=utf-8' );
+            $response->setBody($json);
+        }
         return false;
     }
 
     /**
      * @content 获取单个uri中参数或get中参数 优先uri中，yaf中并不提倡开启全局get,
      * @param string $name
-     * @param string $dafault
+     * @param mixed $default
      * @return bool|string|array
      */
-    protected function getParam(string $name = '', $dafault = '')
+    protected function getParam(string $name = '', $default = '')
     {
         if (!empty($name)) {
             $val = $this->getRequest()->getParam($name);
             if (!empty($val) || (is_numeric($val) && $val==0) ) {
                 return $val;
             }
-            $val = $this->getRequest()->getQuery($name);
+            if(Tool::isSwooleCo()){
+                $val = \Co::getContext()['get'][$name]??'';
+            }else{
+                $val = $this->getRequest()->getQuery($name);
+            }
             if (!empty($val) || (is_numeric($val) && $val==0) ) {
                 return $val;
             }
         } else {
-            $getQuery = $this->getRequest()->getQuery();
+            if(Tool::isSwooleCo()){
+                $getQuery = \Co::getContext()['get']??[];
+            }else{
+                $getQuery = $this->getRequest()->getQuery();
+            }
             $getParams = $this->getRequest()->getParams();
             return array_merge($getParams, $getQuery);
         }
-        return $dafault;
+        return $default;
     }
 
     /**
      * @param string $name
-     * @param string $dafault
+     * @param mixed $default
      * @return mixed
      */
-    protected function getPost(string $name = '', $dafault = '')
+    protected function getPost(string $name = '', $default = '')
     {
         if (!empty($name)) {
-            $val = $this->getRequest()->getPost($name);
+            if(Tool::isSwooleCo()){
+                $val = \Co::getContext()['post'][$name]??'';
+            }else{
+                $val = $this->getRequest()->getPost($name);
+            }
             if (!empty($val)) {
                 return $val;
             }
         } else {
-            $val = $this->getRequest()->getPost();
+            if(Tool::isSwooleCo()){
+                $val = \Co::getContext()['post']??[];
+            }else{
+                $val = $this->getRequest()->getPost();
+            }
             return $val;
         }
-        return $dafault;
+        return $default;
 
     }
 
@@ -128,31 +153,36 @@ abstract class Controller extends \Yaf\Controller_Abstract
      */
     protected function getRaw()
     {
-        return $this->getRequest()->getRaw();
+        if(Tool::isSwooleCo()){
+            $str = \Co::getContext()['body']??'';
+        }else{
+            $str =  $this->getRequest()->getRaw();
+        }
+        return $str;
     }
 
     /**
      * @content 获取环境变量
      * @param string $name
-     * @param string $dafault
+     * @param string $default
      * @return mixed
      */
-    protected function getEnv(string $name = '', string $dafault = '')
+    protected function getEnv(string $name = '', string $default = '')
     {
-        return $this->getRequest()->getEnv($name, $dafault);
+        return $this->getRequest()->getEnv($name, $default);
     }
 
     /**
      * @content 获取$_SERVER内容
      * @param string $name
-     * @param string $dafault
-     * @return string
+     * @param mixed $default
+     * @return mixed
      */
-    protected function getServer(string $name = '', $dafault = null)
+    protected function getServer(string $name = '', $default = null)
     {
 
         if (!empty($name)) {
-            $val = $this->getRequest()->getServer($name, $dafault);
+            $val = $this->getRequest()->getServer($name, $default);
         } else {
             $val = $this->getRequest()->getServer();
         }
@@ -162,15 +192,23 @@ abstract class Controller extends \Yaf\Controller_Abstract
     /**
      * @content 获取cookie
      * @param string $name
-     * @param string $dafault
+     * @param string $default
      * @return mixed
      */
-    protected function getCookie(string $name = '', string $dafault = '')
+    protected function getCookie(string $name = '', string $default = '')
     {
         if (!empty($name)) {
-            $val = $this->getRequest()->getCookie($name, $dafault);
+            if(Tool::isSwooleCo()){
+                $val = \Co::getContext()['cookie'][$name]??$default;
+            }else{
+                $val = $this->getRequest()->getCookie($name,$default);
+            }
         } else {
-            $val = $this->getRequest()->getCookie();
+            if(Tool::isSwooleCo()){
+                $val = \Co::getContext()['cookie']??[];
+            }else{
+                $val = $this->getRequest()->getCookie();
+            }
         }
         return $val;
     }
@@ -182,7 +220,12 @@ abstract class Controller extends \Yaf\Controller_Abstract
      */
     protected function getFiles(string $name)
     {
-        return $this->getRequest()->getFiles($name);
+        if(Tool::isSwooleCo()){
+            $val = \Co::getContext()['files'][$name]??[];
+        }else{
+            $val = $this->getRequest()->getFiles($name);
+        }
+        return $val;
     }
 
 

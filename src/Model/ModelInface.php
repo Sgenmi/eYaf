@@ -7,19 +7,16 @@
 
 namespace Sgenmi\eYaf\Model;
 
-
 interface ModelInface
 {
-    public function getDb();
-
     // 统一判断用户提交数据,省去重复判断
-    public function checkField($data,$field=[]);
+    public function checkField(array $data,array $field=[]);
 
     public function select($join, $columns = null, $where = null, $is_slave = false);
 
-    public function insert($datas);
+    public function insert(array $datas);
 
-    public function update($datas, $where = null);
+    public function update(array $datas, $where = null);
 
     public function delete($where);
 
@@ -27,7 +24,7 @@ interface ModelInface
 
     public function get($join = null, $columns = null, $where = null, $is_slave = false);
 
-    public function has($join, $where = null);
+    public function has(array $join, $where = null);
 
     public function rand($join = null, $columns = null, $where = null, $is_slave = false);
 
@@ -41,7 +38,7 @@ interface ModelInface
 
     public function min($join, $column = null, $where = null);
 
-    public function action($actions);
+    public function action(callable $actions);
 
     public function debug();
 

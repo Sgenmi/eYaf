@@ -49,16 +49,16 @@ class Tool
      */
     public static function centToYuan(int $val):float
     {
-        return sprintf("%.2f", $val / 100);
+        return floatval(bcdiv($val,100,2));
     }
     /**
      * @desc 元转分
      * @param float $val
-     * @return float|int
+     * @return int
      */
-    public static function yuanToCent(float $val)
+    public static function yuanToCent(float $val):int
     {
-        return $val * 100;
+        return intval(bcmul($val, 100));
     }
 
     public static function  parseUrl($url){
@@ -86,6 +86,97 @@ class Tool
         }
         $urlArr['params'] = $params;
         return $urlArr;
+    }
+
+    /**
+     * 检测是否 swoole环境下,协程运行
+     * @return bool
+     */
+    public static function isSwooleCo():bool{
+        return extension_loaded('swoole') && (\Swoole\Coroutine::getCid()>-1);
+    }
+
+    /**
+     * 生成随机字符串，来自easyswoole
+     * @param int $length
+     * @param string $alphabet
+     * @return string
+     */
+    public static function character(int $length = 6, string $alphabet = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz0123456789'):string
+    {
+        mt_srand();
+        // 重复字母表以防止生成长度溢出字母表长度
+        if ($length >= strlen($alphabet)) {
+            $rate = intval($length / strlen($alphabet)) + 1;
+            $alphabet = str_repeat($alphabet, $rate);
+        }
+        // 打乱顺序返回
+        return strval(substr(str_shuffle($alphabet), 0, $length));
+    }
+
+
+    /**
+     * @param mixed $val
+     * @param string $type object|array|string|int
+     * @param string $separator
+     * @return mixed
+     */
+    public static function convertType(mixed $val, string $type = 'array', string $separator = ''): mixed
+    {
+
+        switch ($type) {
+            case 'object':
+                if (is_object($val)) {
+                    return $val;
+                } else {
+                    if (is_string($val)) {
+                        $val = json_decode($val);
+                    } elseif (is_array($val)) {
+                        $val = (object)$val;
+                    }
+                    return is_object($val) ? $val : new stdClass();
+                }
+            case 'array':
+                if (is_array($val)) {
+                    return $val;
+                } else {
+                    if (is_string($val)) {
+                        if ($separator) {
+                            $val = explode($separator, $val);
+                        } else {
+                            $val = json_decode($val, true);
+                        }
+                    } elseif (is_object($val)) {
+                        $val = (array)$val;
+                    }
+                    return is_array($val) ? $val : [];
+                }
+            case 'string':
+                if (is_string($val)) {
+                    return $val;
+                } else {
+                    if (is_array($val)) {
+                        if ($separator) {
+                            $val = implode($separator, $val);
+                        } else {
+                            $val = json_encode($val, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                        }
+                    } elseif (is_object($val)) {
+                        $val = json_encode($val, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                    }
+                    return is_string($val) ? $val : '';
+                }
+            case 'int':
+                if (is_int($val)) {
+                    return $val;
+                } else {
+                    if (is_string($val)) {
+                        $val = intval($val);
+                    }
+                    return is_int($val) ? $val : 0;
+                }
+        }
+        return null;
     }
 
 }

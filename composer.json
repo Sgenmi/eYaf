@@ -13,11 +13,14 @@
             "email": "sgenmi@gmail.com"
         }
     ],
-    "minimum-stability": "dev",
     "require": {
-        "php": ">=7.1.0",
-        "catfan/medoo": "1.7.10",
-        "sgenmi/yaf-help-doc": "dev-master"
+        "php": ">=7.3",
+        "catfan/medoo": "^2.0.0",
+        "sgenmi/yaf-help-doc": "^0.0.1",
+        "symfony/console": "^5.3",
+        "psr/simple-cache": "1.0.1",
+        "swoole/ide-helper": "^4.8",
+        "monolog/monolog": "^2.9"
     },
     "autoload": {
         "psr-4": {

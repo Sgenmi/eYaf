@@ -1,0 +1,73 @@
+<?php
+
+/**
+ * Created by IntelliJ IDEA.
+ * Author: sgenmi
+ * Date: 2021/11/6 下午5:24
+ * Email: 150560159@qq.com
+ */
+
+$modules = function (){
+    $dir = APP_PATH.'/modules';
+    $modules = scandir($dir);
+    $ret=[];
+    foreach ($modules as $v){
+        if(!is_dir($dir.'/'.$v)){
+            continue;
+        }
+        if( $v!='.' && $v!='..'){
+            $ret[]=$v;
+        }
+    }
+    \Yaf\Registry::set('_modules',$ret);
+    $ret[]='Index';
+    return implode(',',$ret);
+};
+
+return [
+    'application'=>[
+        'directory'=>APP_PATH,
+        'dispatcher'=>[
+            'throwException'=>1,
+            'catchException'=>1,
+            'defaultModuel'=>'Index',
+            'defaultController'=>'Index',
+            'defaultAction'=>'Index'
+         ],
+        'library'=>APP_PATH."/library",
+        'bootstrap'=>APP_PATH."/Bootstrap.php",
+        'ext'=>'php',
+        'view'=>[
+            'ext'=>'phtml'
+        ],
+        'modules'=>$modules(),
+    ],
+    'database'=>[
+        'params'=>[
+            'master'=>[
+                'host'=> '127.0.0.1',
+                'username'=>'root',
+                'password'=>'123456',
+                'type'=>'mysql',
+                'database'=>'dbname',
+                'charset'=>'utf8mb4',
+                'port'=>3306,
+                'prefix'=>''
+            ]
+        ]
+    ],
+    'redis'=>[
+        'app'=>[
+            'host'=>'127.0.0.1',
+            'port'=>6379,
+            'auth'=>''
+        ]
+    ],
+    'upload'=>[
+        'host'=>'',
+        'dir'=>'/tmp'
+    ],
+    'imghost' => 'http://192.168.2.4:5109',
+    'jump_domain' => 'http://192.168.2.222:xxxx',
+
+];

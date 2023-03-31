@@ -7,13 +7,35 @@
  * Email: 150560159@qq.com
  */
 
-use Sgenmi\eYaf\Http\Controller;
+namespace Controller;
 
-class Controller_Index extends Controller{
+
+use Model\UserModel;
+use Repository\IndexRepository;
+
+class Index extends \Web{
+
+    /**
+     * @var IndexRepository
+     */
+    private $indexRepo;
+
+    public function init(){
+        parent::init();
+        $this->indexRepo = new IndexRepository();
+    }
 
     //方法 xxxAction()
     public function indexAction(){
-        phpinfo();
+       echo $this->indexRepo->getStr();
+    }
+
+    // /index/userinfo
+    public function userInfoAction(){
+        $id = $this->getParam('id',0);
+        $model = new UserModel();
+        $res = $model->getUserInfo($id);
+        var_dump($res);
     }
 
 }

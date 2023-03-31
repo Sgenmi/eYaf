@@ -1,0 +1,91 @@
+<?php
+
+/**
+ * Created by IntelliJ IDEA.
+ * Author: sgenmi
+ * Date: 2022/4/26 9:48 AM
+ * Email: 150560159@qq.com
+ */
+namespace Command;
+
+use Sgenmi\eYaf\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
+
+
+class Test extends Command
+{
+
+    protected $descInfo = [
+        'test:us' => [
+            'desc' => '测试 us',
+            'help' => '测试 help',
+            //使用 如 php bin.php test:us 2022-02-01 2022-02-02  [注意参数有顺序]
+            //  echo $this->input->getArgument('s');  //2022-02-01
+            //  echo $this->input->getArgument('e');  //2022-02-02
+            'argument' => [
+                's' => [
+                    'mode' => InputArgument::OPTIONAL,
+                    'desc' => '开始时间',
+                    'default'=>''
+                ],
+                'e' => [
+                    'mode' => InputArgument::OPTIONAL,
+                    'desc' => '结束时间',
+                    'default'=>''
+                ]
+            ],
+            //使用 如 php bin.php test:us [-s 2022-02-01 | --start_time=2022-02-01]  [参数可选，无顺序]
+            // echo $this->input->getOption('start_time');  //2022-02-01,注意不能用短别名获取，不能使用系统自带短别名
+
+            'option' => [
+                'start_time' => [
+                    'mode' => InputOption::VALUE_OPTIONAL,
+                    'desc' => '开始时间',
+                    'short_alias' => 's', // -s=xxxx
+                    'default'=>''
+                ],
+                'end_time' => [
+                    'mode' => InputOption::VALUE_OPTIONAL,
+                    'desc' => '结束时间',
+                    'short_alias' => 'e', // -e=xxxx
+                    'default'=>''
+                ]
+            ],
+        ],
+
+         'test:ms' => [
+              'desc' => '测试 ms',
+              'help' => '测试 help',
+          ]
+
+
+    ];
+
+    public function __construct(string $name = null)
+    {
+        parent::__construct($name);
+    }
+
+    /**
+     * php bin.php test:us
+     * @return void
+     */
+    protected function us()
+    {
+//        echo $this->input->getOption('s');
+//        echo $this->input->getOption('start_time');
+        echo $this->output->writeln(__METHOD__);
+    }
+
+        /**
+         * php bin.php test:ms
+         * @return void
+         */
+        protected function ms()
+        {
+            echo $this->output->writeln(__METHOD__);
+        }
+
+
+}

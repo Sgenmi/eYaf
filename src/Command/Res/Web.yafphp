@@ -1,0 +1,17 @@
+<?php
+
+/**
+ * Created by IntelliJ IDEA.
+ * Author: sgenmi
+ * Date: 2021/9/23 下午2:25
+ * Email: 150560159@qq.com
+ */
+
+abstract class Web extends \Sgenmi\eYaf\Http\Controller
+{
+    protected function getRawArr():array {
+        $arr = json_decode($this->getRaw(),true);
+        return is_array($arr)?$arr:[];
+    }
+
+}

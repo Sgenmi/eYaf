@@ -1,0 +1,139 @@
+<?php
+declare(strict_types=1);
+
+namespace Sgenmi\eYaf\Command\Res;
+
+use Monolog\Formatter\LineFormatter;
+use Monolog\Handler\NativeMailerHandler;
+use Monolog\Handler\StreamHandler;
+use Monolog\Logger;
+
+/**
+ * 日志类，可以自行扩展 channel , _getLogger()
+ * Author: sgenmi
+ * Date: 2023/3/28 3:43 PM
+ * Email: 150560159@qq.com
+ */
+class MonoLog
+{
+    /**
+     * @param $message
+     * @param array $content
+     * @param string $name
+     * @param string $fileName
+     * @return void
+     * @author Sgenmi
+     */
+    public static function info($message, array $content = [], string $name = "local", string $fileName = '',): void
+    {
+        self::log($message, $content, $name, $fileName, Logger::INFO);
+    }
+
+    /**
+     * @param $message
+     * @param array $content
+     * @param string $name
+     * @param string $fileName
+     * @return void
+     * @author Sgenmi
+     */
+    public static function notice($message, array $content = [], string $name = "local", string $fileName = ''): void
+    {
+        self::log($message, $content, $name, $fileName, Logger::NOTICE);
+    }
+
+    /**
+     * @param $message
+     * @param array $content
+     * @param string $name
+     * @param string $fileName
+     * @return void
+     * @author Sgenmi
+     */
+    public static function waring($message, array $content = [], string $name = "local", string $fileName = ''): void
+    {
+        self::log($message, $content, $name, $fileName, Logger::WARNING);
+    }
+
+    /**
+     * @param $message
+     * @param array $content
+     * @param string $name
+     * @param string $fileName
+     * @return void
+     * @author Sgenmi
+     */
+    public static function error($message, array $content = [], string $name = "local", string $fileName = ''): void
+    {
+        self::log($message, $content, $name, $fileName, Logger::ERROR);
+    }
+
+    /**
+     * @param $message
+     * @param array $content
+     * @param string $name
+     * @param string $fileName
+     * @param int $level
+     * @return void
+     * @author Sgenmi
+     */
+    public static function log($message, array $content = [], string $name = "local", string $fileName = '', int $level = Logger::INFO): void
+    {
+        $log = self::getLogger($name, $fileName);
+        $log->log($level, self::getContent($message), $content);
+    }
+
+    private static function getContent($content): string
+    {
+        if (is_array($content)) {
+            return json_encode($content, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        }
+        return (string)$content;
+    }
+
+    /**
+     *
+     * @param string $name
+     * @param array $config
+     * @return Logger
+     * @author Sgenmi
+     */
+    private static function _getLogger(string $name, array $config = []): Logger
+    {
+        switch ($name) {
+            case "" || $name == 'local':
+                $handle = new StreamHandler($config['filePath']);
+                $dateFormat = "Y-m-d H:i:s";
+                $output = "[%datetime%] %channel%.%level_name%: %message% %context% %extra%\n"; # 日志内容格式
+                $line_formatter = new LineFormatter($output, $dateFormat);
+                $handle->setFormatter($line_formatter);
+                $log = new Logger('local');
+                $log->pushHandler($handle);
+                break;
+//            case "db":
+//                $hd = new StreamHandler($config['filePath']);
+//                break;
+//            case 'email':
+//                $hd = new NativeMailerHandler($config['to'] ?? '', $config['subject'] ?? '', $config['from'] ?? '');
+//                break;
+            default:
+                $log = new Logger('local');
+        }
+        $log->setTimezone(new DateTimeZone('Asia/Shanghai'));
+        return $log;
+    }
+
+    public static function getLogger(string $name = 'local', string $fileName = ''): Logger
+    {
+        $config = [];
+        if ($name == 'local') {
+            $_fileName = "runtime.log";
+            if ($fileName) {
+                $_fileName = str_contains($fileName, ".log") ? $fileName : $fileName . ".log";
+            }
+            $config['filePath'] = LOG_PATH . "/" . $_fileName;
+        }
+        return self::_getLogger($name, $config);
+    }
+
+}

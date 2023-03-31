@@ -7,6 +7,7 @@
 
 namespace Sgenmi\eYaf\Cache;
 
+use Sgenmi\eYaf\Utility\Tool;
 use Yaf\Exception;
 
 /**
@@ -15,18 +16,41 @@ class Redis implements CacheIface
 {
     private $configDefault='app';
     private $config=[];
+    private static $connect=[];
     /**
      * @var \Redis
      */
     private $redis;
-    public function __construct($configDefault="app"){
+    public function __construct(string $configDefault="app"){
         $this->configDefault = $configDefault;
         $this->connect();
     }
-    private function connect() {
+
+    private function connect(){
+        $coId=0;
+        if(Tool::isSwooleCo()){
+            $coId = \Swoole\Coroutine::getCid();
+        }
+        if(!isset(self::$connect[$coId][$this->configDefault])){
+            try {
+                $this->reconnect();
+                self::$connect[$coId][$this->configDefault] = $this->redis;
+                if($coId>0){
+                    \Swoole\Coroutine\defer(function ()use($coId){
+                        unset(self::$connect[$coId]);
+                    });
+                }
+            }catch (\Throwable $e){
+                unset(self::$connect[$coId][$this->configDefault]);
+            }
+        }else{
+            $this->redis = self::$connect[$coId][$this->configDefault];
+        }
+    }
+    private function reconnect():void {
         $gCofnig = \Yaf\Registry::get('_config');
         $name = $this->configDefault;
-        $config = $gCofnig->redis->$name;
+        $config = $gCofnig['redis'][$name]??[];
         if(!$config) {
             throw new Exception("Can't find $name configuration with redis");
         }
@@ -40,8 +64,10 @@ class Redis implements CacheIface
         if(isset($config['auth']) && $config['auth']){
             $redis->auth($config['auth']);
         }
+        if(isset($config['db']) && $config['db']){
+            $redis->select($config['db']);
+        }
         $this->redis = $redis;
-        return ;
     }
 
     /**

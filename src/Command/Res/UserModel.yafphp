@@ -1,0 +1,25 @@
+<?php
+
+/**
+ * Created by IntelliJ IDEA.
+ * Author: sgenmi
+ * Date: 2020/9/1 下午12:03
+ * Email: 150560159@qq.com
+ */
+
+namespace Model;
+
+class UserModel extends AbstractModel
+{
+    public $table = 'user';
+    public function getUserInfo(int $id){
+        return $id;
+//        $where=[
+//            'AND'=>[
+//                'id'=>$id
+//            ]
+//        ];
+//       return $this->get('*',$where);
+    }
+
+}
