@@ -9,17 +9,20 @@
 
 namespace Sgenmi\eYaf\Http;
 
+use Sgenmi\eYaf\Contract\ContainerInterface;
+use Sgenmi\eYaf\Di\Container;
 use Sgenmi\eYaf\Utility\Tool;
 
 abstract class Controller extends \Yaf\Controller_Abstract
 {
-    protected $isAjax = false;
-    protected $isGet = false;
-    protected $isPost = false;
-    protected $isHead = false;
-    protected $isPut = false;
-    protected $isDel = false;
-    protected $isWeiXin = false;
+    protected bool $isAjax = false;
+    protected bool $isGet = false;
+    protected bool $isPost = false;
+    protected bool $isHead = false;
+    protected bool $isPut = false;
+    protected bool $isDel = false;
+    protected bool $isWeiXin = false;
+    protected ContainerInterface $container;
 
     public function init()
     {
@@ -29,6 +32,7 @@ abstract class Controller extends \Yaf\Controller_Abstract
             \Yaf\Dispatcher::getInstance()->disableView();
         }
         $this->initMethod();
+        $this->container = Container::getInstance();
     }
 
     private function initMethod()
