@@ -2,6 +2,7 @@
 
 namespace Sgenmi\eYaf\Di;
 
+use Sgenmi\eYaf\Context;
 use Sgenmi\eYaf\Contract\ContainerInterface;
 
 /**
@@ -39,29 +40,45 @@ class Container implements ContainerInterface
         ];
     }
 
-    public function set(string $id, $entry)
+    public function set(string $id, $entry): void
     {
         $this->container[$id] = $entry;
     }
 
-    public function get(string $id)
+    public function get(string $id):mixed
     {
         if (isset($this->container[$id]) || array_key_exists($id, $this->container)) {
             return $this->container[$id];
         }
-        return (new $id);
+        return $this->make($id);
     }
 
     public function has(string $id): bool
     {
-        return false;
+       return isset($this->container[$id]);
     }
 
-    private function make(){
+    /**
+     * @param string $id
+     * @return mixed
+     * @author Sgenmi
+     */
+    private function make(string $id):mixed{
 
+        if(Context::has($id)){
+            return Context::get($id);
+        }
+        $val = new $id();
+        Context::set($id,$val);
+        return $val;
     }
 
-    public function getAll(){
+    public function destroy(string $id): void
+    {
+        unset($this->container[$id]);
+    }
+
+    public function getContainer():array{
         return $this->container;
     }
 }
