@@ -9,7 +9,10 @@
 
 namespace Sgenmi\eYaf\Http;
 
+use Nyholm\Psr7\Stream;
 use Sgenmi\eYaf\Contract\ContainerInterface;
+use Sgenmi\eYaf\Contract\RequestInterface;
+use Sgenmi\eYaf\Contract\ResponseInterface;
 use Sgenmi\eYaf\Di\Container;
 use Sgenmi\eYaf\Utility\Tool;
 
@@ -26,40 +29,41 @@ abstract class Controller extends \Yaf\Controller_Abstract
 
     public function init()
     {
+        $this->container = Container::getInstance();
         !defined('IS_DISABLE_VIEW') && define('IS_DISABLE_VIEW', true);
         //禁用渲染模板
         if (IS_DISABLE_VIEW) {
             \Yaf\Dispatcher::getInstance()->disableView();
         }
         $this->initMethod();
-        $this->container = Container::getInstance();
     }
 
     private function initMethod()
     {
-        $request = $this->getRequest();
+        $request = $this->container->get(RequestInterface::class);
+        $method = strtoupper($request->getMethod());
         switch (true) {
-            case $request->isXmlHttpRequest():
+            case strtoupper($request->getHeader('HTTP_X_REQUESTED_WITH')[0]??'')==='XMLHttpRequest':
                 $this->isAjax = true;
-            case $request->isGet():
+            case $method==='GET':
                 $this->isGet = true;
-            case $request->isPost():
-                $this->isPost = true;
-            case true: // 结束，下面头没有用到，但保留功能
                 break;
-            case $request->isHead():
+            case $method==="POST":
+                $this->isPost = true;
+                break;
+            case $method==="HEAD":
                 $this->isHead = true;
                 break;
-            case $request->isPut():
+            case $method==='PUT':
                 $this->isPut = true;
                 break;
-            case $request->isDelete():
+            case $method==='DELETE':
                 $this->isDel = true;
                 break;
         }
         // 判断是否是wx
-        $ua = isset($_SERVER['HTTP_USER_AGENT']) ? strtolower($_SERVER['HTTP_USER_AGENT']) : '';
-        if (strpos($ua, 'micromessenger') !== false) {
+        $ua = $request->getHeader('HTTP_USER_AGENT')[0]??'';
+        if ($ua && strpos(strtolower($ua), 'micromessenger') !== false) {
             $this->isWeiXin = true;
         }
     }
@@ -68,10 +72,10 @@ abstract class Controller extends \Yaf\Controller_Abstract
      * 返回false 因为yaf在控制器中返回false时，不渲染模板
      * @param int $code
      * @param string $message
-     * @param array $data
+     * @param mixed $data
      * @return bool
      */
-    protected function Json( int $code = 0, string $message = '', array $data =[])
+    protected function Json( int $code = 0, string $message = '', mixed $data =[])
     {
         $r_data = [
             'code' => $code,
@@ -79,14 +83,20 @@ abstract class Controller extends \Yaf\Controller_Abstract
             'data' => $data?:new \stdClass()
         ];
         $json = json_encode($r_data);
-        if(Tool::isSwooleCo() && ($responseSw = \Co::getContext()['response'])){
-            $responseSw->setHeader('Content-Type','application/json; charset=utf-8');
-            echo $json;
-        }else{
-            $response = $this->getResponse();
-            $response->setHeader( 'Content-Type', 'application/json; charset=utf-8' );
-            $response->setBody($json);
-        }
+//        if(Tool::isSwooleCo() && ($responseSw = \Co::getContext()['response'])){
+//            $responseSw->setHeader('Content-Type','application/json; charset=utf-8');
+//            echo $json;
+//        }else{
+//            $response = $this->getResponse();
+//            $response->setHeader( 'Content-Type', 'application/json; charset=utf-8' );
+//            $response->setBody($json);
+//        }
+//        $this->container->get(ResponseInterface::class)
+
+        $resp =  $this->container->get(ResponseInterface::class)
+            ->withBody(Stream::create($json))
+            ->withHeader('Content-Type','application/json; charset=utf-8');
+        $this->container->set(ResponseInterface::class,$resp);
         return false;
     }
 
