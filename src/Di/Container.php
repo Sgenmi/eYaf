@@ -1,9 +1,12 @@
 <?php
+declare(strict_types=1);
 
 namespace Sgenmi\eYaf\Di;
 
 use Sgenmi\eYaf\Context;
 use Sgenmi\eYaf\Contract\ContainerInterface;
+use Sgenmi\eYaf\Contract\RequestInterface;
+use Sgenmi\eYaf\Contract\ResponseInterface;
 
 /**
  * Author: Sgenmi
@@ -42,7 +45,15 @@ class Container implements ContainerInterface
 
     public function set(string $id, $entry): void
     {
-        $this->container[$id] = $entry;
+        if(empty($id)){
+            return;
+        }
+        //特殊二个，走短生命周期
+        if($id==RequestInterface::class || $id==ResponseInterface::class ){
+            Context::set($id,$entry);
+        }else{
+            $this->container[$id] = $entry;
+        }
     }
 
     public function get(string $id):mixed
