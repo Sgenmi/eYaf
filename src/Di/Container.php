@@ -71,15 +71,15 @@ class Container implements ContainerInterface
 
     /**
      * @param string $id
+     * @param array $parameters
      * @return mixed
      * @author Sgenmi
      */
-    private function make(string $id):mixed{
-
+    public function make(string $id,array $parameters=[] ):mixed{
         if(Context::has($id)){
             return Context::get($id);
         }
-        $val = new $id();
+        $val = new $id(...$parameters);
         Context::set($id,$val);
         return $val;
     }
@@ -87,6 +87,7 @@ class Container implements ContainerInterface
     public function destroy(string $id): void
     {
         unset($this->container[$id]);
+        Context::destroy($id);
     }
 
     public function getContainer():array{
