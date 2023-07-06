@@ -15,4 +15,5 @@ interface RequestInterface extends ServerRequestInterface
     public function getParams():array;
     public function getParam(string $name):string;
     public function setParams(array $params):RequestInterface;
+    public function getPost(string $name=null,mixed $default=null):mixed;
 }
