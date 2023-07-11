@@ -19,6 +19,14 @@ interface ContainerInterface extends \Psr\Container\ContainerInterface
     public function set(string $id, mixed $entry);
 
     /**
+     * @param string $id
+     * @param array $parameters
+     * @return mixed
+     * @author Sgenmi
+     */
+    public function make(string $id,array $parameters=[]):mixed;
+
+    /**
      * @return array
      * @author Sgenmi
      */

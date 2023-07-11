@@ -8,6 +8,11 @@ declare(strict_types=1);
 
 namespace Sgenmi\eYaf\Contract;
 
+/**
+ * @method mixed get(string $key, mixed $default='')
+ * @method bool set(string $key,mixed $val)
+ */
+
 interface ConfigInterface
 {
     /**
