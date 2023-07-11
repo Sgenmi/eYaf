@@ -14,7 +14,7 @@ interface ModelInface
 
     public function select($join, $columns = null, $where = null, $is_slave = false);
 
-    public function insert(array $datas);
+    public function insert(array $datas,?string $primaryKey = null);
 
     public function update(array $datas, $where = null);
 

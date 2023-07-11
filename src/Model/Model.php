@@ -7,25 +7,35 @@
 
 namespace Sgenmi\eYaf\Model;
 use Medoo\Raw;
+use RuntimeException;
+use Sgenmi\eYaf\Context;
+use Sgenmi\eYaf\Di\Container;
+use Sgenmi\eYaf\Pool\PoolFactory;
+use Swoole\Coroutine;
+use Throwable;
 use Yaf\Exception;
 
 abstract class Model implements ModelInface
 {
     /**
      * @var Medoo|mixed
+     * @deprecated
      */
     protected $db;
     /**
      * @var Medoo
+     * @deprecated
      */
     private $readDB;
 
     /**
      * @var Medoo
+     * @deprecated
      */
     private $writeDB;
     /**
      * @var array
+     * @deprecated
      */
     protected $check_rule;
 
@@ -51,68 +61,49 @@ abstract class Model implements ModelInface
 
     /**
      * @var \PDOStatement;
+     * @deprecated
      */
     protected $statement;
 
-    // public function checkLogin($d)
-    // {
-    // $this->rData = $d;
-    // $this->check_field = [
-    // 'user_name', 'password'
-    // ];
-    // return $this->check_data($d);
-    // }
+    private ?array $errorInfo=null;
+    private ?string $error=null;
+    private ?string $lastSql="";
+    private array $logs=[];
 
-    // 这里可以设置读写分离
-    // 如果未设置从库，则readDB也是调用主库
-    /**
-     * @throws Exception
-     */
+    protected string $connect="master";
+
+
+
     public function __construct()
     {
-        if(extension_loaded('swoole')){
-            $coId = \Swoole\Coroutine::getCid();
-            if($coId>0){
-                $this->co_db($coId);
-            }else{
-                $this->fpm_db();
-            }
-        }else{
-            $this->fpm_db();
-        }
+//        if(extension_loaded('swoole') && ($coId= Coroutine::getCid())>0){
+//            $this->co_db($coId);
+//        }else{
+//            $this->fpm_db();
+//        }
     }
 
     /**
-     *  FPM , Swoole Coroutine=false
-     * @return void
+     *  FPM
+     * @param bool $isSlave
+     * @return Medoo
      * @throws Exception
      */
-    private function fpm_db(){
-        $writeDB = \Yaf\Registry::get('_masterDB');
-        if(!$writeDB || !($writeDB instanceof Medoo)){
-            $masterConfig = $this->getDBConfig(true);
-            $writeDB = $this->getMedoo($masterConfig);
-            if(!$writeDB){
-                throw new Exception("master db connect fail");
+    private function fpm_db(bool $isSlave=false):Medoo{
+        $contextKey = $this->getContextKey($isSlave);
+        $medoo = \Yaf\Registry::get($contextKey);
+        if(!$medoo || !($medoo instanceof Medoo)){
+            $masterConfig = $this->getDBConfig($this->connect,$isSlave);
+            $medoo = $this->getMedoo($masterConfig);
+            if(!$medoo){
+                throw new Exception($this->connect." db connect fail");
             }
-            \Yaf\Registry::set('_masterDB',$writeDB);
+            \Yaf\Registry::set($contextKey,$medoo);
         }
-        $readDB = \Yaf\Registry::get('_slaveDB');
-        if(!$readDB || !($readDB instanceof Medoo)){
-            $slaveConfig = $this->getDBConfig(false);
-            if($slaveConfig){
-                $readDB = $this->getMedoo($slaveConfig);
-            }else{
-                $readDB =  $writeDB;
-            }
-            if(!$readDB){
-                throw new Exception("slave db connect fail");
-            }
-            \Yaf\Registry::set('_slaveDB',$readDB);
-        }
-        $this->writeDB = $writeDB;
-        $this->readDB = $readDB;
-        $this->db= $this->writeDB;
+//        $this->writeDB = $writeDB;
+//        $this->readDB = $readDB;
+//        $this->db= $this->writeDB;
+        return $medoo;
     }
 
     /**
@@ -131,14 +122,15 @@ abstract class Model implements ModelInface
                 throw new Exception("master db connect fail in coroutine");
             }
             Coroutine::setCon($coId,$writeDB);
-            \Swoole\Coroutine::defer(function () use($coId,$writeDB){
+            Coroutine::defer(function () use($coId,$writeDB){
                 $writeDB->pdo = null;
                 Coroutine::delCon($coId);
             });
         }
-        $this->writeDB = $writeDB;
-        $this->readDB = $this->writeDB;
-        $this->db= $this->writeDB;
+//        $this->writeDB = $writeDB;
+//        $this->readDB = $this->writeDB;
+//        $this->db= $this->writeDB;
+        return $writeDB;
     }
 
     /**
@@ -156,29 +148,41 @@ abstract class Model implements ModelInface
     }
 
     /**
+     * @param string $connect
+     * @param bool $isSlave
+     * @return string
+     * @author Sgenmi
+     */
+    private static function getConnectName(string $connect,bool $isSlave = false): string
+    {
+       return $isSlave? ($connect=='master'?"slave":$connect."_slave"): $connect;
+    }
+
+    /**
      * 获取链接db,兼容升级
-     * @param bool $isMaster
+     * @param string $connect
+     * @param bool $isSlave
      * @return array
      */
-    public static function getDBConfig(bool $isMaster = false):array
+    public static function getDBConfig(string $connect,bool $isSlave = false):array
     {
         $_config = \Yaf\Registry::get('_config');
         $options=[];
-        if ($isMaster) {
+        if (!$isSlave) {
             if(is_object($_config)){
-                if(!empty($_config->database->params->master)){
-                    $options = $_config->database->params->master->toArray();
+                if(!empty($_config->database->params->$connect)){
+                    $options = $_config->database->params->$connect->toArray();
                 }
             }else{
-                $options = $_config['database']['params']['master']??[];
+                $options = $_config['database']['params'][$connect]??[];
             }
-
         } else {
+            $connect = self::getConnectName($connect,$isSlave);
             // 如果没有设置从库，就直接选主库
             if(is_object($_config)){
-                $slaveArr = $_config->database->params->slave->toArray();
+                $slaveArr = $_config->database->params->$connect->toArray();
             }else{
-                $slaveArr = $_config['database']['params']['slave']??[];
+                $slaveArr = $_config['database']['params'][$connect]??[];
             }
             if (!empty($slaveArr)) {
                 if(isset($slaveArr['host'])){
@@ -188,6 +192,10 @@ abstract class Model implements ModelInface
                     $options = $slaveArr[$randKey];
                 }
             }
+        }
+
+        if(!$options){
+            throw new RuntimeException($connect." db config not fund");
         }
         //兼容medoo 1.x 升级 2.x
         if($options && isset($options['database_name'])){
@@ -227,17 +235,9 @@ abstract class Model implements ModelInface
     /**
      * @param Medoo $db
      * @return $this
-     * @throws \Exception
      */
     public function setDb(Medoo $db):Model
     {
-        if(empty($db)){
-            return $this;
-        }
-        if(!($db instanceof Medoo)){
-            $className =  get_class($db);
-            throw new \Exception($className .' not Medoo instance, please inject Medoo instance' );
-        }
         $this->writeDB = $db;
         $this->readDB = $db;
         $this->db = $db;
@@ -350,35 +350,139 @@ abstract class Model implements ModelInface
         return $ret;
     }
 
+
+    /**
+     * @param bool $isSlave
+     * @return array
+     * @throws Throwable
+     * @author Sgenmi
+     */
+    private function _getMedoo(bool $isSlave=false):array{
+        $coId = $this->getCoroutineId();
+        $poolConnection=null;
+        $contextKey = $this->getContextKey($isSlave);
+        if($coId){
+            if(defined("IS_DISABLE_POOL") && IS_DISABLE_POOL){
+                $medoo = $this->co_db($coId);
+            }else{
+                $hasContextConnection = Context::get($contextKey);
+                if($hasContextConnection){
+                    $poolConnection =$hasContextConnection;
+                }else{
+                    $con = Container::getInstance();
+                    $poolConnection = $con->get(PoolFactory::class)->getPool(self::getConnectName($this->connect,$isSlave))->get()->getConnection();
+                }
+                $medoo = $poolConnection->getMedoo();
+            }
+        }else{
+            $medoo = $this->fpm_db($isSlave);
+        }
+        return [
+            'name'=>$contextKey,
+            'medoo'=>$medoo,
+            'coroutine_id'=>$coId,
+            'pool_connection'=>$poolConnection
+        ];
+    }
+
+    /**
+     * @return int
+     * @author Sgenmi
+     */
+    private function getCoroutineId(): int
+    {
+        if( extension_loaded('swoole') && (($coId = Coroutine::getCid())>0)){
+            return intval($coId);
+        }
+        return 0;
+    }
+
+    /**
+     * @param bool $isSlave
+     * @return string
+     * @author Sgenmi
+     */
+    private function getContextKey(bool $isSlave=false):string {
+        return  $isSlave ? sprintf('database:%s:slave',$this->connect): 'database:'.$this->connect;
+    }
+
+
+    /**
+     * @param array $medooInfo
+     * @param string $action
+     * @return void
+     * @author Sgenmi
+     */
+    private function _finally(array $medooInfo,string $action=''): void
+    {
+        $this->error = $medooInfo['medoo']->error;
+        $this->errorInfo = $medooInfo['medoo']->errorInfo;
+        $this->lastSql = $medooInfo['medoo']->last();
+        if($medooInfo['coroutine_id']<=0){
+            return;
+        }
+        $contextKey=$medooInfo['name'];
+        $hasContextConnection = Context::has($contextKey);
+        if (! $hasContextConnection) {
+            $connection = $medooInfo['pool_connection'];
+            if (in_array($action,['action','debug','beginDebug','debugLog','lock'])) {
+                Context::set($contextKey,$connection);
+                defer(function () use ($connection, $contextKey) {
+                    Context::set($contextKey, null);
+                    $connection->release();
+                });
+            } else {
+                $connection->release();
+            }
+        }
+    }
+
     /**
      * @param array|string $join
      * @param array|string $columns
      * @param array $where
      * @param bool $is_slave
      * @return array|null
+     * @throws Throwable
      */
     public function select($join, $columns = null, $where = null, $is_slave = false):?array
     {
-        if ($is_slave) {
-            return $this->readDB->select($this->table, $join, $columns, $where);
-        } else {
-            return $this->writeDB->select($this->table, $join, $columns, $where);
+        $medooInfo = $this->_getMedoo($is_slave);
+        try {
+            $res = $medooInfo['medoo']->select($this->table, $join, $columns, $where);
+            return $res;
+        }catch (Throwable $e){
+            if($medooInfo['coroutine_id']<=0){
+                throw $e;
+            }
+        } finally {
+            $this->_finally($medooInfo);
         }
+        return [];
     }
 
     /**
      * @param array $datas
      * @param string|null $primaryKey
      * @return bool|int
+     * @throws Throwable
      */
-    public function insert(array $datas,string $primaryKey = null)
+    public function insert(array $datas, ?string $primaryKey = null)
     {
-        $statement = $this->writeDB->insert($this->table, $datas);
-        $this->statement = $statement;
-        if (!empty($statement)) {
-            if ($statement->rowCount() > 0) {
-                return (int)($this->writeDB->id());
+        $medooInfo = $this->_getMedoo();
+        try {
+            $statement = $medooInfo['medoo']->insert($this->table, $datas);
+            if (!empty($statement)) {
+                if ($statement->rowCount() > 0) {
+                    return (int)($medooInfo['medoo']->id());
+                }
             }
+        }catch (Throwable $e){
+            if($medooInfo['coroutine_id']<=0){
+                throw $e;
+            }
+        } finally {
+            $this->_finally($medooInfo);
         }
         return false;
     }
@@ -387,13 +491,22 @@ abstract class Model implements ModelInface
      * @param array $datas
      * @param array $where
      * @return bool
+     * @throws Throwable
      */
     public function update(array $datas, $where = null):bool
     {
-        $statement = $this->writeDB->update($this->table, $datas, $where);
-        $this->statement = $statement;
-        if (!empty($statement)) {
-            return true;
+        $medooInfo = $this->_getMedoo();
+        try {
+            $statement = $medooInfo['medoo']->update($this->table, $datas, $where);
+            if (!empty($statement)) {
+                return true;
+            }
+        }catch (Throwable $e){
+            if($medooInfo['coroutine_id']<=0){
+                throw $e;
+            }
+        } finally {
+            $this->_finally($medooInfo);
         }
         return false;
     }
@@ -401,13 +514,22 @@ abstract class Model implements ModelInface
     /**
      * @param array|Raw $where
      * @return bool
+     * @throws Throwable
      */
     public function delete($where):bool
     {
-        $statement =  $this->writeDB->delete($this->table, $where);
-        $this->statement = $statement;
-        if (!empty($statement)) {
-            return true;
+        $medooInfo = $this->_getMedoo();
+        try {
+            $statement =  $medooInfo['medoo']->delete($this->table, $where);
+            if (!empty($statement)) {
+                return true;
+            }
+        }catch (Throwable $e){
+            if($medooInfo['coroutine_id']<=0){
+                throw $e;
+            }
+        } finally {
+            $this->_finally($medooInfo);
         }
         return false;
     }
@@ -416,12 +538,22 @@ abstract class Model implements ModelInface
      * @param array $columns
      * @param array $where
      * @return bool
+     * @throws Throwable
      */
     public function replace($columns, $where = null):bool
     {
-        $statement =  $this->writeDB->replace($this->table, $columns, $where);
-        if (!empty($statement)) {
-            return true;
+        $medooInfo = $this->_getMedoo();
+        try {
+            $statement =  $medooInfo['medoo']->replace($this->table, $columns, $where);
+            if (!empty($statement)) {
+                return true;
+            }
+        }catch (Throwable $e){
+            if($medooInfo['coroutine_id']<=0){
+                throw $e;
+            }
+        } finally {
+            $this->_finally($medooInfo);
         }
         return false;
     }
@@ -432,13 +564,19 @@ abstract class Model implements ModelInface
      * @param array $where
      * @param bool $is_slave
      * @return mixed
+     * @throws Throwable
      */
     public function get($join = null, $columns = null, $where = null, $is_slave = false)
     {
-        if ($is_slave) {
-            return $this->readDB->get($this->table, $join, $columns, $where);
-        } else {
-            return $this->writeDB->get($this->table, $join, $columns, $where);
+        $medooInfo = $this->_getMedoo($is_slave);
+        try {
+            return $medooInfo['medoo']->get($this->table, $join, $columns, $where);
+        }catch (Throwable $e){
+            if($medooInfo['coroutine_id']<=0){
+                throw $e;
+            }
+        } finally {
+            $this->_finally($medooInfo);
         }
     }
 
@@ -446,26 +584,44 @@ abstract class Model implements ModelInface
      * @param array $join
      * @param array $where
      * @return bool
+     * @throws Throwable
      */
     public function has(array $join, $where = null):bool
     {
-        return $this->writeDB->has($this->table, $join, $where);
+        $medooInfo = $this->_getMedoo();
+        try {
+            return $medooInfo['medoo']->has($this->table, $join, $where);
+        }catch (Throwable $e){
+            if($medooInfo['coroutine_id']<=0){
+                throw $e;
+            }
+        } finally  {
+            $this->_finally($medooInfo);
+        }
+        return false;
     }
 
     /**
-     * @param array|string $join
-     * @param array|string $columns
-     * @param array $where
+     * @param array|null $join
+     * @param array|string|null $columns
+     * @param string|array|null $where
      * @param bool $is_slave
-     * @return array
+     * @return array|null
+     * @throws Throwable
      */
     public function rand($join = null, $columns = null, $where = null, $is_slave = false):?array
     {
-        if ($is_slave) {
-            return $this->readDB->rand($this->table, $join, $columns, $where);
-        } else {
-            return $this->writeDB->rand($this->table, $join, $columns, $where);
+        $medooInfo = $this->_getMedoo($is_slave);
+        try {
+            return $medooInfo['medoo']->rand($this->table, $join, $columns, $where);
+        }catch (Throwable $e){
+            if($medooInfo['coroutine_id']<=0){
+                throw $e;
+            }
+        } finally {
+            $this->_finally($medooInfo);
         }
+        return [];
     }
 
     /**
@@ -474,14 +630,21 @@ abstract class Model implements ModelInface
      * @param array $where
      * @param bool $is_slave
      * @return int|null
+     * @throws Throwable
      */
     public function count($join = null, $column = null, $where = null, $is_slave = false):?int
     {
-        if ($is_slave) {
-            return $this->readDB->count($this->table, $join, $column, $where) + 0;
-        } else {
-            return $this->writeDB->count($this->table, $join, $column, $where) + 0;
+        $medooInfo = $this->_getMedoo($is_slave);
+        try {
+            return $medooInfo['medoo']->count($this->table, $join, $column, $where) + 0;
+        }catch (Throwable $e){
+            if($medooInfo['coroutine_id']<=0){
+                throw $e;
+            }
+        } finally {
+            $this->_finally($medooInfo);
         }
+        return null;
     }
 
     /**
@@ -490,14 +653,21 @@ abstract class Model implements ModelInface
      * @param array $where
      * @param bool $is_slave
      * @return string|null
+     * @throws Throwable
      */
     public function sum($join, $column = null, $where = null, $is_slave = false):?string
     {
-        if ($is_slave) {
-            return $this->readDB->sum($this->table, $join, $column, $where);
-        } else {
-            return $this->writeDB->sum($this->table, $join, $column, $where);
+        $medooInfo = $this->_getMedoo($is_slave);
+        try {
+            return $medooInfo['medoo']->sum($this->table, $join, $column, $where);
+        }catch (Throwable $e){
+            if($medooInfo['coroutine_id']<=0){
+                throw $e;
+            }
+        } finally {
+            $this->_finally($medooInfo);
         }
+        return null;
     }
 
     /**
@@ -505,10 +675,21 @@ abstract class Model implements ModelInface
      * @param string $column
      * @param array $where
      * @return string|null
+     * @throws Throwable
      */
     public function avg($join, $column = null, $where = null): ?string
     {
-        return $this->writeDB->avg($this->table, $join, $column, $where);
+        $medooInfo = $this->_getMedoo();
+        try {
+            return $medooInfo['medoo']->avg($this->table, $join, $column, $where);
+        }catch (Throwable $e){
+            if($medooInfo['coroutine_id']<=0){
+                throw $e;
+            }
+        } finally {
+            $this->_finally($medooInfo);
+        }
+        return null;
     }
 
     /**
@@ -516,10 +697,21 @@ abstract class Model implements ModelInface
      * @param string $column
      * @param array $where
      * @return string|null
+     * @throws Throwable
      */
     public function max($join, $column = null, $where = null): ?string
     {
-        return $this->writeDB->max($this->table, $join, $column, $where);
+        $medooInfo = $this->_getMedoo();
+        try {
+            return $medooInfo['medoo']->max($this->table, $join, $column, $where);
+        }catch (Throwable $e){
+            if($medooInfo['coroutine_id']<=0){
+                throw $e;
+            }
+        } finally {
+            $this->_finally($medooInfo);
+        }
+        return null;
     }
 
     /**
@@ -527,25 +719,42 @@ abstract class Model implements ModelInface
      * @param string $column
      * @param array $where
      * @return string|null
+     * @throws Throwable
      */
     public function min($join, $column = null, $where = null): ?string
     {
-        return $this->writeDB->min($this->table, $join, $column, $where);
+        $medooInfo = $this->_getMedoo();
+        try {
+            return $medooInfo['medoo']->min($this->table, $join, $column, $where);
+        }catch (Throwable $e){
+            if($medooInfo['coroutine_id']<=0){
+                throw $e;
+            }
+        } finally {
+            $this->_finally($medooInfo);
+        }
+        return null;
     }
 
 
     /**
      * @param callable $actions
      * @return bool
+     * @throws Throwable
      */
     public function action(callable $actions):bool
     {
+        $medooInfo = $this->_getMedoo();
         $ret = true;
         try {
-            $this->writeDB->action($actions);
-        }catch (\Throwable $e){
-            $this->writeDB->error = $e->getMessage();
+            $medooInfo['medoo']->action($actions);
+        }catch (Throwable $e){
+            if($medooInfo['coroutine_id']<=0){
+                throw $e;
+            }
             $ret =  false;
+        } finally {
+            $this->_finally($medooInfo,'action');
         }
         return $ret;
     }
@@ -554,41 +763,72 @@ abstract class Model implements ModelInface
      * @param array $columns
      * @param array|null $options
      * @return bool
+     * @throws Throwable
      */
     public function create(array $columns, array $options = null):bool {
-        $this->statement = $this->writeDB->create($this->table,$columns,$options);
-        if(!empty($this->statement)){
-            return true;
+        $medooInfo = $this->_getMedoo();
+        try {
+            $statement =$medooInfo['medoo']->create($this->table,$columns,$options);
+            if(!empty($statement)){
+                return true;
+            }
+        }catch (Throwable $e){
+            if($medooInfo['coroutine_id']<=0){
+                throw $e;
+            }
+        } finally {
+            $this->_finally($medooInfo);
         }
         return false;
     }
 
     /**
      * @return bool
+     * @throws Throwable
      */
     public function drop():bool {
-        $this->statement = $this->writeDB->drop($this->table);
-        if(!empty($this->statement)){
-            return true;
+        $medooInfo = $this->_getMedoo();
+        try {
+            $statement =$medooInfo['medoo']->drop($this->table);
+            if(!empty($statement)){
+                return true;
+            }
+        }catch (Throwable $e){
+            if($medooInfo['coroutine_id']<=0){
+                throw $e;
+            }
+        } finally {
+            $this->_finally($medooInfo);
         }
         return false;
     }
 
     /**
      * @return $this
+     * @throws Throwable
      */
     public function debug():Model
     {
-        $this->writeDB->debug();
+        $medooInfo = $this->_getMedoo();
+        try {
+            $medooInfo['medoo']->debug();
+        }catch (Throwable $e){
+            if($medooInfo['coroutine_id']<=0){
+                throw $e;
+            }
+        } finally {
+            $this->_finally($medooInfo,'debug');
+        }
         return $this;
     }
 
     /**
      * @return string|null
      */
-    public function error():?string
-    {
-        return $this->writeDB->error;
+    public function error():?string{
+        $error = $this->error;
+        $this->error=null;
+        return $error;
     }
 
     /**
@@ -596,54 +836,93 @@ abstract class Model implements ModelInface
      */
     public function last():?string
     {
-        return $this->writeDB->last();
+        return $this->lastSql;
     }
 
     /**
      * @return array
+     * @throws Throwable
      */
     public function log():array
     {
-        return $this->writeDB->log();
+        $medooInfo = $this->_getMedoo();
+        $coId = $this->getCoroutineId();
+        if($coId){
+            return $this->logs;
+        }else{
+            return $medooInfo['medoo']->log();
+        }
     }
 
     /**
      * @param string $sql
      * @param int $pdo_fetch
-     * @return array|bool|null
+     * @return array|null
+     * @throws Throwable
      */
     public function query(string $sql, int $pdo_fetch = \PDO::FETCH_ASSOC):?array
     {
-        $this->statement =  $this->writeDB->query($sql);
-        if(!empty($this->statement)){
-            return $this->statement->fetchAll($pdo_fetch);
+        $medooInfo = $this->_getMedoo();
+        try {
+            $statement =  $medooInfo['medoo']->query($sql);
+            if(!empty($statement)){
+                return $statement->fetchAll($pdo_fetch);
+            }
+        }catch (Throwable $e){
+            if($medooInfo['coroutine_id']<=0){
+                throw $e;
+            }
+        } finally {
+            $this->_finally($medooInfo);
         }
-        return false;
+        return null;
     }
 
     /**
      * @param string $string
-     * @return string
+     * @return string|null
+     * @throws Throwable
      */
     public function quote(string $string):?string {
-       return $this->writeDB->quote($string);
+        $medooInfo = $this->_getMedoo();
+        try {
+            return $medooInfo['medoo']->quote($string);
+        }catch (Throwable $e){
+            if($medooInfo['coroutine_id']<=0){
+                throw $e;
+            }
+        } finally {
+            $this->_finally($medooInfo);
+        }
+        return null;
     }
 
     /**
      * @return string
+     * @throws Throwable
      */
     public function tableQuote():string {
-        return $this->writeDB->tableQuote($this->table);
+        $medooInfo = $this->_getMedoo();
+        try {
+            return $medooInfo['medoo']->tableQuote($this->table);
+        }catch (Throwable $e){
+            if($medooInfo['coroutine_id']<=0){
+                throw $e;
+            }
+        } finally {
+            $this->_finally($medooInfo);
+        }
+        return '';
     }
 
     /**
-     * @param $string
+     * @param string $string
      * @param array $map
      * @return Medoo|Raw
      */
     public function raw(string $string, array $map = []):?Raw
     {
-        return $this->writeDB->raw($string, $map);
+        return Medoo::raw($string,$map);
     }
 
     /**
@@ -651,14 +930,34 @@ abstract class Model implements ModelInface
      */
     public function beginDebug():void
     {
-        $this->writeDB->beginDebug();
+        $medooInfo = $this->_getMedoo();
+        try {
+            $medooInfo['medoo']->beginDebug();
+        }catch (Throwable $e){
+            if($medooInfo['coroutine_id']<=0){
+                throw $e;
+            }
+        } finally {
+            $this->_finally($medooInfo,'beginDebug');
+        }
     }
 
     /**
      * @return array
+     * @throws Throwable
      */
     public function debugLog():array {
-        return $this->writeDB->debugLog();
+        $medooInfo = $this->_getMedoo();
+        try {
+            return $medooInfo['medoo']->debugLog();
+        }catch (Throwable $e){
+            if($medooInfo['coroutine_id']<=0){
+                throw $e;
+            }
+        } finally {
+            $this->_finally($medooInfo,'debugLog');
+        }
+        return [] ;
     }
 
     /**
@@ -666,22 +965,47 @@ abstract class Model implements ModelInface
      */
     public function errorInfo():?array
     {
-        return $this->writeDB->errorInfo;
+        $errorInfo = $this->errorInfo;
+        $this->errorInfo=null;
+        return $errorInfo;
     }
+
+
 
     /**
      * @return array
+     * @throws Throwable
      */
     public function info():array {
-        return $this->writeDB->info();
+        $medooInfo = $this->_getMedoo();
+        try {
+            return $medooInfo['medoo']->info();
+        }catch (Throwable $e){
+            if($medooInfo['coroutine_id']<=0){
+                throw $e;
+            }
+        } finally {
+            $this->_finally($medooInfo);
+        }
+        return [] ;
     }
 
     /**
      * @param string $type
      * @return Model
+     * @throws Throwable
      */
     public function lock(string $type = Medoo::LOCK_FOR_UPDATE):Model{
-        $this->writeDB->lock($type);
+        $medooInfo = $this->_getMedoo();
+        try {
+            return $medooInfo['medoo']->lock($type);
+        }catch (Throwable $e){
+            if($medooInfo['coroutine_id']<=0){
+                throw $e;
+            }
+        } finally {
+            $this->_finally($medooInfo,'lock');
+        }
         return $this;
     }
 
@@ -689,14 +1013,20 @@ abstract class Model implements ModelInface
      * @param array $values
      * @param string|null $primaryKey
      * @return bool
+     * @throws Throwable
      */
     public function insertUpdate(array $values, string $primaryKey = null):bool{
+        $medooInfo = $this->_getMedoo();
         try {
-            $this->writeDB->insertUpdate($this->table,$values,$primaryKey);
+            $medooInfo['medoo']->insertUpdate($this->table,$values,$primaryKey);
             $ret = true;
         }catch (\Exception $e){
-            $ret = false;
-            throw $e;
+            $ret =false;
+            if($medooInfo['coroutine_id']<=0){
+                throw $e;
+            }
+        } finally {
+            $this->_finally($medooInfo);
         }
         return $ret;
     }

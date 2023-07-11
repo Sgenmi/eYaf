@@ -30,7 +30,11 @@ final class SysInitPlugin extends Plugin_Abstract
         $url = ($serverArr['REQUEST_SCHEME']??'http').'://'.$serverArr['HTTP_HOST'].($serverArr['REQUEST_URI']??'/');
         $req = new Request($request->getMethod(),$url,$serverArr,$request->getRaw()?:'','1.1',$serverArr);
         $req->setParams($request->getParams());
-        $con->set(RequestInterface::class, $req->withParsedBody($request->getPost()));
+        $con->set(RequestInterface::class,
+            $req->withParsedBody($request->getPost())
+            ->withCookieParams($request->getCookie())
+            ->withUploadedFiles($request->getFiles())
+        );
         $con->set(ResponseInterface::class,new Response(200,[],null));
     }
 

@@ -9,6 +9,7 @@ namespace Sgenmi\eYaf;
 use Sgenmi\eYaf\Contract\ConfigInterface;
 use Sgenmi\eYaf\Di\Container;
 use Sgenmi\eYaf\Plugin\SysInitPlugin;
+use Sgenmi\eYaf\Pool\PoolFactory;
 use Yaf\Bootstrap_Abstract;
 use Yaf\Loader;
 use Yaf\Registry;
@@ -21,7 +22,9 @@ class Bootstrap extends Bootstrap_Abstract
     {
         $config = \Yaf\Application::app()->getConfig();
         Registry::set('_config', $config->toArray());
-        Container::getInstance()->set(ConfigInterface::class,new Config());
+        $con = Container::getInstance();
+        $con->set(ConfigInterface::class,new Config());
+        $con->set(PoolFactory::class,new PoolFactory());
     }
 
     //关闭错误

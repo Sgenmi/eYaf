@@ -11,14 +11,24 @@ namespace Sgenmi\eYaf\Model;
 
 use Medoo\Medoo as catfanMedoo;
 use PDOStatement;
+use Sgenmi\eYaf\Contract\ConfigInterface;
+use Sgenmi\eYaf\Di\Container;
 
 class Medoo extends catfanMedoo
 {
 
-    protected $lock='';
+    protected string $lock='';
 
     const LOCK_FOR_UPDATE = ' FOR UPDATE';
     const LOCK_SHARE = ' LOCK IN SHARE MODE';
+
+    private array $config=[];
+
+    public function __construct(array $options)
+    {
+        $this->config = $options;
+        parent::__construct($options);
+    }
 
     /**
      * @param string $type
@@ -49,8 +59,7 @@ class Medoo extends catfanMedoo
                         Coroutine::delCon($coId);
                     }
                 }
-                $config = Model::getDBConfig(true);
-                parent::__construct($config);
+                parent::__construct($this->config);
                 $res =  parent::exec($statement,$map,$callback);
             }else{
                 throw $e;
