@@ -10,5 +10,12 @@ namespace Sgenmi\eYaf\Pool;
 
 class RedisPool extends Pool
 {
-
+    /**
+     * @return RedisConnection
+     * @author Sgenmi
+     */
+    protected function createConnection():RedisConnection
+    {
+        return new RedisConnection($this->container,$this->getConfig(),$this);
+    }
 }
