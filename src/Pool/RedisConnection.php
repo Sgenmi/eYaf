@@ -17,7 +17,7 @@ class RedisConnection implements ConnectionInterface
 {
     private Container $container;
     private array $config = [];
-    protected \Redis $connection = null;
+    protected ?\Redis $connection = null;
     protected float $lastUseTime = 0.0;
 
     protected Pool $pool;
@@ -41,17 +41,6 @@ class RedisConnection implements ConnectionInterface
         }
         return $this->getActiveConnection();
     }
-
-    public function __call($name, $arguments)
-    {
-        try {
-
-        }catch (Throwable $e){
-
-        }
-
-    }
-
 
     private function getActiveConnection(): static
     {

@@ -362,7 +362,7 @@ abstract class Model implements ModelInface
         $poolConnection=null;
         $contextKey = $this->getContextKey($isSlave);
         if($coId){
-            if(defined("IS_DISABLE_POOL") && IS_DISABLE_POOL){
+            if(defined("IS_DISABLE_DB_POOL") && IS_DISABLE_DB_POOL){
                 $medoo = $this->co_db($coId);
             }else{
                 $hasContextConnection = Context::get($contextKey);
