@@ -17,7 +17,7 @@ class RedisConnection implements ConnectionInterface
 {
     private Container $container;
     private array $config = [];
-    protected \Redis $connection = null;
+    protected ?\Redis $connection = null;
     protected float $lastUseTime = 0.0;
 
     protected Pool $pool;
