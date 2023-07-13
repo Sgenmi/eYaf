@@ -42,17 +42,6 @@ class RedisConnection implements ConnectionInterface
         return $this->getActiveConnection();
     }
 
-    public function __call($name, $arguments)
-    {
-        try {
-
-        }catch (Throwable $e){
-
-        }
-
-    }
-
-
     private function getActiveConnection(): static
     {
         if ($this->check()) {
