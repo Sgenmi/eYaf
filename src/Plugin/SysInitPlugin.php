@@ -10,9 +10,11 @@ namespace Sgenmi\eYaf\Plugin;
 
 use Sgenmi\eYaf\Contract\RequestInterface;
 use Sgenmi\eYaf\Contract\ResponseInterface;
+use Sgenmi\eYaf\Contract\StdoutLoggerInterface;
 use Sgenmi\eYaf\Di\Container;
 use Sgenmi\eYaf\Http\Request;
 use Sgenmi\eYaf\Http\Response;
+use Sgenmi\eYaf\Logger\MonoLog;
 use Yaf\Plugin_Abstract;
 use Yaf\Request_Abstract;
 use Yaf\Response_Abstract;
@@ -36,6 +38,7 @@ final class SysInitPlugin extends Plugin_Abstract
             ->withUploadedFiles($request->getFiles())
         );
         $con->set(ResponseInterface::class,new Response(200,[],null));
+        $con->set(StdoutLoggerInterface::class,new MonoLog());
     }
 
     /**
