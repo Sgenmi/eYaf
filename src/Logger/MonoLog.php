@@ -4,9 +4,11 @@ declare(strict_types=1);
 namespace Sgenmi\eYaf\Logger;
 
 use DateTimeZone;
+use RuntimeException;
 use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
+use Psr\Log\InvalidArgumentException;
 use Psr\Log\LogLevel;
 use Sgenmi\eYaf\Contract\StdoutLoggerInterface;
 
@@ -61,11 +63,15 @@ class MonoLog implements StdoutLoggerInterface
 
     public function log($level, $message, array $context = array(), string $name = "local", string $fileName = '')
     {
-        $log = $this->getLogger($name, $fileName);
+        $log = $this->_getLogger($name, $fileName);
         $log->log($level, self::getContent($message), $context);
     }
 
-
+    /**
+     * @param $content
+     * @return string
+     * @author Sgenmi
+     */
     private static function getContent($content): string
     {
         if (is_array($content)) {
@@ -74,41 +80,53 @@ class MonoLog implements StdoutLoggerInterface
         return (string)$content;
     }
 
-    private  function getLogger(string $name = 'local', string $fileName = ''): Logger
-    {
-        $config = [];
-        if ($name == 'local') {
-            $_fileName = "runtime.log";
-            if ($fileName) {
-                $_fileName = str_contains($fileName, ".log") ? $fileName : $fileName . ".log";
-            }
-            $config['filePath'] = LOG_PATH . "/" . $_fileName;
-        }
-        return self::_getLogger($name, $config);
-    }
 
-    private static function _getLogger(string $name, array $config = []): Logger
-    {
-        switch ($name) {
-            case "" || $name == 'local':
-                $handle = new StreamHandler($config['filePath']);
-                $dateFormat = "Y-m-d H:i:s";
-                $output = "[%datetime%] %channel%.%level_name%: %message% %context% %extra%\n"; # 日志内容格式
-                $line_formatter = new LineFormatter($output, $dateFormat);
-                $handle->setFormatter($line_formatter);
-                $log = new Logger('local');
-                $log->pushHandler($handle);
-                break;
-//            case "db":
-//                $hd = new StreamHandler($config['filePath']);
-//                break;
-//            case 'email':
-//                $hd = new NativeMailerHandler($config['to'] ?? '', $config['subject'] ?? '', $config['from'] ?? '');
-//                break;
-            default:
-                $log = new Logger('local');
+    /**
+     * @param array $config
+     * @return Logger
+     * @author Sgenmi
+     */
+    protected function getLoggerByLocal(array $config = []):Logger {
+        $_fileName = "runtime.log";
+        if (!empty($config['fileName'])) {
+            $fileName = $config['fileName'];
+            $_fileName = str_contains($fileName, ".log") ? $fileName : $fileName . ".log";
         }
+        $config['filePath'] = LOG_PATH . "/" . $_fileName;
+        $handle = new StreamHandler($config['filePath']);
+        $dateFormat = "Y-m-d H:i:s";
+        $output = "[%datetime%] %channel%.%level_name%: %message% %context% %extra%\n"; # 日志内容格式
+        $line_formatter = new LineFormatter($output, $dateFormat);
+        $handle->setFormatter($line_formatter);
+        $log = new Logger('local');
+        $log->pushHandler($handle);
         $log->setTimezone(new DateTimeZone('Asia/Shanghai'));
         return $log;
+    }
+
+    /**
+     * @param string $name
+     * @param string $fileName
+     * @return Logger
+     * @author Sgenmi
+     */
+    private  function _getLogger(string $name, string $fileName=''): Logger
+    {
+        if(empty($name)){
+            $name = 'local';
+        }
+        $config=[
+            'name'=>$name,
+            'fileName'=>$fileName
+        ];
+        $getLoggerFun = 'getLoggerBy'.ucfirst($name);
+        if(!method_exists($this,$getLoggerFun)){
+            throw new InvalidArgumentException("not fund ".static::class.'::'.$getLoggerFun);
+        }
+        $logger = $this->$getLoggerFun($config);
+        if(!$logger instanceof Logger){
+            throw new RuntimeException(sprintf("Driver %s is not invalid",$name));
+        }
+        return $logger;
     }
 }
