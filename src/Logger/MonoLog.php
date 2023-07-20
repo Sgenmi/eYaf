@@ -21,47 +21,47 @@ use Sgenmi\eYaf\Contract\StdoutLoggerInterface;
 class MonoLog implements StdoutLoggerInterface
 {
 
-    public function emergency($message, array $context = [], string $name = "local", string $fileName = '')
+    public function emergency($message, array $context = [], string $name = "local", string $fileName = ''): void
     {
         $this->log(LogLevel::EMERGENCY, $message, $context, $name, $fileName);
     }
 
-    public function alert($message, array $context = [], string $name = "local", string $fileName = '')
+    public function alert($message, array $context = [], string $name = "local", string $fileName = ''): void
     {
         $this->log(LogLevel::ALERT, $message, $context, $name, $fileName);
     }
 
-    public function critical($message, array $context = [], string $name = "local", string $fileName = '')
+    public function critical($message, array $context = [], string $name = "local", string $fileName = ''): void
     {
         $this->log(LogLevel::CRITICAL, $message, $context, $name, $fileName);
     }
 
-    public function error($message, array $context = [], string $name = "local", string $fileName = '')
+    public function error($message, array $context = [], string $name = "local", string $fileName = ''): void
     {
         $this->log(LogLevel::ERROR, $message, $context, $name, $fileName);
     }
 
-    public function warning($message, array $context = [], string $name = "local", string $fileName = '')
+    public function warning($message, array $context = [], string $name = "local", string $fileName = ''): void
     {
         $this->log(LogLevel::WARNING, $message, $context, $name, $fileName);
     }
 
-    public function notice($message, array $context = [], string $name = "local", string $fileName = '')
+    public function notice($message, array $context = [], string $name = "local", string $fileName = ''): void
     {
         $this->log(LogLevel::NOTICE, $message, $context, $name, $fileName);
     }
 
-    public function info($message, array $context = [], string $name = "local", string $fileName = '')
+    public function info($message, array $context = [], string $name = "local", string $fileName = ''): void
     {
         $this->log(LogLevel::INFO, $message, $context, $name, $fileName);
     }
 
-    public function debug($message, array $context = [], string $name = "local", string $fileName = '')
+    public function debug($message, array $context = [], string $name = "local", string $fileName = ''): void
     {
         $this->log(LogLevel::DEBUG, $message, $context, $name, $fileName);
     }
 
-    public function log($level, $message, array $context = array(), string $name = "local", string $fileName = '')
+    public function log($level, $message, array $context = array(), string $name = "local", string $fileName = ''): void
     {
         $log = $this->_getLogger($name, $fileName);
         $log->log($level, self::getContent($message), $context);
