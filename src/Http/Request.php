@@ -9,9 +9,9 @@ declare(strict_types=1);
 namespace Sgenmi\eYaf\Http;
 
 
-use Nyholm\Psr7\ServerRequest;
-use Sgenmi\eYaf\Contract\RequestInterface;
 
+use GuzzleHttp\Psr7\ServerRequest;
+use Sgenmi\eYaf\Contract\RequestInterface;
 
 class Request extends ServerRequest implements RequestInterface
 {
