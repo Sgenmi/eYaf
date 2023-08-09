@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 namespace Sgenmi\eYaf\Http;
 
-class Response extends \Nyholm\Psr7\Response
+class Response extends \GuzzleHttp\Psr7\Response
 {
 
 }

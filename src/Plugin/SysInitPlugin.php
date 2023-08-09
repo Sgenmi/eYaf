@@ -24,10 +24,14 @@ final class SysInitPlugin extends Plugin_Abstract
     public function routerShutdown(Request_Abstract $request, Response_Abstract $response)
     {
         $exeClient =  php_sapi_name();
-        if($exeClient!='fpm-fcgi'){
+        if($exeClient!='fpm-fcgi' && $exeClient!='cgi-fcgi'){
             return;
         }
         $serverArr= $request->getServer();
+        if($exeClient=='cgi-fcgi'){
+            unset($serverArr['CommonProgramFiles(x86)']);
+            unset($serverArr['ProgramFiles(x86)']);
+        }
         $con = Container::getInstance();
         $url = ($serverArr['REQUEST_SCHEME']??'http').'://'.$serverArr['HTTP_HOST'].($serverArr['REQUEST_URI']??'/');
         $req = new Request($request->getMethod(),$url,$serverArr,$request->getRaw()?:'','1.1',$serverArr);
