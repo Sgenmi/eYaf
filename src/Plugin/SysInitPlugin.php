@@ -40,6 +40,7 @@ final class SysInitPlugin extends Plugin_Abstract
             $req->withParsedBody($request->getPost())
             ->withCookieParams($request->getCookie())
             ->withUploadedFiles($request->getFiles())
+            ->withQueryParams($request->getQuery())
         );
         $con->set(ResponseInterface::class,new Response(200,[],null));
         $con->set(StdoutLoggerInterface::class,new MonoLog());
