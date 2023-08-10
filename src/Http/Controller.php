@@ -9,7 +9,8 @@
 
 namespace Sgenmi\eYaf\Http;
 
-use Nyholm\Psr7\Stream;
+
+use GuzzleHttp\Psr7\Stream;
 use Psr\Container\ContainerInterface;
 use Sgenmi\eYaf\Contract\RequestInterface;
 use Sgenmi\eYaf\Contract\ResponseInterface;
