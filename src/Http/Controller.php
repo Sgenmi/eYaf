@@ -9,8 +9,7 @@
 
 namespace Sgenmi\eYaf\Http;
 
-
-use GuzzleHttp\Psr7\Stream;
+use GuzzleHttp\Psr7\Utils;
 use Psr\Container\ContainerInterface;
 use Sgenmi\eYaf\Contract\RequestInterface;
 use Sgenmi\eYaf\Contract\ResponseInterface;
@@ -84,7 +83,7 @@ abstract class Controller extends \Yaf\Controller_Abstract
         ];
         $json = json_encode($r_data);
         $resp =  $this->container->get(ResponseInterface::class)
-            ->withBody(Stream::create($json))
+            ->withBody(Utils::streamFor($json))
             ->withHeader('Content-Type','application/json; charset=utf-8');
         $this->container->set(ResponseInterface::class,$resp);
         return false;
