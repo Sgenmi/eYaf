@@ -10,12 +10,12 @@
 abstract class Admin extends \Web
 {
     protected function getTokenInfo():array {
-        $info = \Sgenmi\eYaf\Auth\Token::getTokenInfo(\Config::TOKEN_ADMIN_KEY);
+        $info = \Sgenmi\eYaf\Auth\Token::getTokenInfo();
         return is_array($info)  ?$info:[];
     }
 
     protected function getTokenUserId():int{
-        $userId =  \Sgenmi\eYaf\Auth\Token::getUserId(\Config::TOKEN_ADMIN_KEY);
+        $userId = \Sgenmi\eYaf\Auth\Token::getUserId();
         return $userId+0;
     }
 
