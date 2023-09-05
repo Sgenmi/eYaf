@@ -9,6 +9,8 @@
 
 namespace Controller;
 
+use Sgenmi\eYaf\Contract\ResponseInterface;
+use Sgenmi\eYaf\Contract\StdoutLoggerInterface;
 
 class Error extends \Web
 {
@@ -22,10 +24,14 @@ class Error extends \Web
                 $code = 1;
             }
             if(defined('DEVELOPMENT') && !DEVELOPMENT){
-              //  \Log::error($message.PHP_EOL.$exception->getTraceAsString());
-                return $this->Json($code,$message);
+                $this->Json($code,$message);
+                $this->container->get(StdoutLoggerInterface::class)->error($message.' | '.$exception->getTraceAsString());
+            }else{
+                $this->Json(1,$message,$exception->getTrace());
             }
-            return $this->Json(1,$message,$exception->getTrace());
+            header("Content-Type: application/json; charset=UTF-8");
+            echo $this->container->get(ResponseInterface::class)->getBody()->getContents();
+            return false;
         }
 
 

@@ -9,14 +9,16 @@
 
 namespace Sgenmi\eYaf;
 
-class Config {
+use Sgenmi\eYaf\Contract\ConfigInterface;
+
+class Config implements ConfigInterface {
 
     /**
      * @param string $key
-     * @param $val
+     * @param mixed $val
      * @return bool
      */
-    public static function set(string $key,$val):bool {
+    public static function set(string $key,mixed $val):bool {
         if(!$key){
             return false;
         }
@@ -33,10 +35,11 @@ class Config {
 
     /**
      * @param string $key
-     * @param string $default
+     * @param mixed $default
      * @return mixed
      */
-    public static function get(string $key,$default=''){
+    public static function get(string $key, mixed $default=''): mixed
+    {
         $config = \Yaf\Registry::get('_config');
         if(!$key){
             return $config;
