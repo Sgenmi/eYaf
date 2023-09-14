@@ -62,10 +62,14 @@ class Bootstrap extends Bootstrap_Abstract
         }
     }
 
+    //custom plugin
+    public function initPlugins(\Yaf\Dispatcher $dispatcher):void{}
+
     //system plugin
     public function _initSysPlugins(\Yaf\Dispatcher $dispatcher)
     {
         $dispatcher->registerPlugin(new SysInitPlugin());
+        $this->initPlugins($dispatcher);
     }
 
 }
