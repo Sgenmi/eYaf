@@ -29,12 +29,6 @@
     },
     "bin": [
         "bin/eyaf"
-    ],
-    "repositories":[
-        {
-            "type": "composer",
-            "url": "https://github.com/Sgenmi/Medoo.git"
-        }
     ]
 
 }
