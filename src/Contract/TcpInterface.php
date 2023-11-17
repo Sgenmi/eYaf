@@ -7,7 +7,7 @@
  * Email: 150560159@qq.com
  */
 
-namespace Sgenmi\eYaf\Tcp;
+namespace Sgenmi\eYaf\Contract;
 
 use Swoole\Server;
 
