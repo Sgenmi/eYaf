@@ -32,7 +32,7 @@
     ],
     "repositories":[
         {
-            "type": "git",
+            "type": "composer",
             "url": "https://github.com/Sgenmi/Medoo.git"
         }
     ]
