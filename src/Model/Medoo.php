@@ -15,17 +15,8 @@ use PDOStatement;
 class Medoo extends catfanMedoo
 {
 
-    protected $lock='';
-
     const LOCK_FOR_UPDATE = ' FOR UPDATE';
     const LOCK_SHARE = ' LOCK IN SHARE MODE';
-
-    /**
-     * @param string $type
-     */
-    public function lock(string $type= self::LOCK_FOR_UPDATE):void{
-        $this->lock = $type;
-    }
 
     /**
      * @param string $statement
@@ -36,8 +27,6 @@ class Medoo extends catfanMedoo
     public function exec(string $statement, array $map = [], callable $callback = null): ?PDOStatement
     {
         try {
-            $statement = $statement. $this->lock;
-            $this->lock='';
             $res =  parent::exec($statement,$map,$callback);
         }catch (\PDOException $e) {
             // 超时重链

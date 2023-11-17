@@ -637,7 +637,7 @@ abstract class Model implements ModelInface
     }
 
     /**
-     * @param $string
+     * @param string $string
      * @param array $map
      * @return Medoo|Raw
      */
@@ -674,15 +674,6 @@ abstract class Model implements ModelInface
      */
     public function info():array {
         return $this->writeDB->info();
-    }
-
-    /**
-     * @param string $type
-     * @return Model
-     */
-    public function lock(string $type = Medoo::LOCK_FOR_UPDATE):Model{
-        $this->writeDB->lock($type);
-        return $this;
     }
 
     /**
