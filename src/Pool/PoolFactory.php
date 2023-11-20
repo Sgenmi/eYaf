@@ -42,7 +42,7 @@ final class PoolFactory
                 $driver = $config['type'] ?? '';
         } elseif ($type == 'redis') {
             $config = $configObj->get('redis')[$name] ?? [];
-            $driver = !empty($config) ? $name : '';
+            $driver = !empty($config) ? $type : '';
         }
         $class = $this->getPoolClass($driver);
         //这里可以完成fpm获取实例
