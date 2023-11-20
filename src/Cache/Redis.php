@@ -186,7 +186,7 @@ class Redis
         if($coId && !$this->isDisablePool()){
             $factory = Container::getInstance()->get(PoolFactory::class);
             if (! $connection instanceof RedisConnection) {
-                $pool = $factory->getPool($factory,'redis');
+                $pool = $factory->getPool($this->name,'redis');
                 $connection = $pool->get()->getConnection();
             }
             if (! $connection instanceof RedisConnection) {

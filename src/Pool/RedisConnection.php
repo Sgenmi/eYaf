@@ -91,4 +91,9 @@ class RedisConnection implements ConnectionInterface
         $this->pool->release($this);
     }
 
+    public function __call(string $name, array $arguments)
+    {
+        return $this->connection->{$name}(...$arguments);
+    }
+
 }
