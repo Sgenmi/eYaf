@@ -65,7 +65,8 @@ class Command extends \Symfony\Component\Console\Command\Command
     //信号的定义
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $action = explode(':', $this->getName())[1];
+        $action = explode(':', $this->getName());
+        $action= end($action);
         $this->$action();
         return 0;
     }
