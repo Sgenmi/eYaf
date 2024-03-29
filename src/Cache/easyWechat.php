@@ -27,8 +27,9 @@ class easyWechat implements CacheInterface
      * @param string $key
      * @param null $default
      * @return mixed|null
+     * @throws \RedisException
      */
-    public function get($key, $default = null)
+    public function get(string $key, $default = null):mixed
     {
         $redis = $this->getRedis();
         $val = $redis->get($key);
@@ -40,29 +41,32 @@ class easyWechat implements CacheInterface
      * @param mixed $value
      * @param null $ttl
      * @return bool
+     * @throws \RedisException
      */
-    public function set($key, $value, $ttl = null)
+    public function set(string $key, $value, $ttl = null):bool
     {
         $redis = $this->getRedis();
         $redis->sadd('s:all:wechat:cache', $key);
         $value = serialize($value);
-        return $redis->set($key,$value,$ttl);
+        return (bool)$redis->set($key,$value,$ttl);
     }
 
     /**
      * @param string $key
-     * @return bool|int
+     * @return bool
+     * @throws \RedisException
      */
-    public function delete($key)
+    public function delete(string $key):bool
     {
         $redis = $this->getRedis();
-        return $redis->del($key);
+        return (bool) $redis->del($key);
     }
 
     /**
      * @return bool
+     * @throws \RedisException
      */
-    public function clear()
+    public function clear():bool
     {
         $redis = $this->getRedis();
         $keys = $redis->sMembers('s:all:wechat:cache');
@@ -75,9 +79,10 @@ class easyWechat implements CacheInterface
     /**
      * @param iterable $keys
      * @param null $default
-     * @return iterable|null
+     * @return iterable
+     * @throws \RedisException
      */
-    public function getMultiple($keys, $default = null)
+    public function getMultiple($keys, $default = null):iterable
     {
         if ($keys instanceof \Traversable) {
             $keys = iterator_to_array($keys, false);
@@ -101,8 +106,9 @@ class easyWechat implements CacheInterface
      * @param iterable $values
      * @param null $ttl
      * @return bool
+     * @throws \RedisException
      */
-    public function setMultiple($values, $ttl = null)
+    public function setMultiple($values, $ttl = null):bool
     {
         if (!is_array($values) && !$values instanceof \Traversable) {
             throw new InvalidArgumentException(sprintf('Cache values must be array or Traversable, "%s" given.', get_debug_type($values)));
@@ -117,7 +123,7 @@ class easyWechat implements CacheInterface
      * @param iterable $keys
      * @return bool
      */
-    public function deleteMultiple($keys)
+    public function deleteMultiple($keys):bool
     {
         if ($keys instanceof \Traversable) {
             $keys = iterator_to_array($keys, false);
@@ -132,19 +138,20 @@ class easyWechat implements CacheInterface
 
     /**
      * @param string $key
-     * @return bool|int
+     * @return bool
+     * @throws \RedisException
      */
-    public function has($key)
+    public function has(string $key):bool
     {
         $redis = $this->getRedis();
-        return $redis->exists($key);
+        return (bool)$redis->exists($key);
     }
 
-    public function getRedis():\Redis{
+    public function getRedis(){
         if(!is_null($this->redis)){
             return $this->redis;
         }
-        $this->redis = (new Redis($this->configDefault))->getRedis();
+        $this->redis = new Redis($this->configDefault);
         return $this->redis;
 
     }
