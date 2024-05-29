@@ -17,7 +17,7 @@ class Context
     public static function set(string $id, mixed $value, ?int $coroutineId = null): mixed
     {
         if (self::isSwooleCo()) {
-            Coroutine::getContext($coroutineId)[$id] = $value;
+            Coroutine::getContext((int)$coroutineId)[$id] = $value;
         } else {
             static::$context[$id] = $value;
         }
@@ -27,7 +27,7 @@ class Context
     public static function get(string $id, mixed $default = null, ?int $coroutineId = null): mixed
     {
         if (self::isSwooleCo()) {
-            return Coroutine::getContext($coroutineId)[$id] ?? $default;
+            return Coroutine::getContext((int)$coroutineId)[$id] ?? $default;
         }
         return static::$context[$id] ?? $default;
     }
@@ -35,7 +35,7 @@ class Context
     public static function has(string $id, ?int $coroutineId = null): bool
     {
         if (self::isSwooleCo()) {
-            return isset(Coroutine::getContext($coroutineId)[$id]);
+            return isset(Coroutine::getContext((int)$coroutineId)[$id]);
         }
         return isset(static::$context[$id]);
     }
@@ -44,7 +44,7 @@ class Context
     public static function destroy(string $id, ?int $coroutineId = null): void
     {
         if (self::isSwooleCo()) {
-            unset(Coroutine::getContext($coroutineId)[$id]);
+            unset(Coroutine::getContext((int)$coroutineId)[$id]);
         }
         unset(static::$context[$id]);
     }
