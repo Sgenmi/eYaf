@@ -25,6 +25,7 @@ abstract class Controller extends \Yaf\Controller_Abstract
     protected bool $isDel = false;
     protected bool $isWeiXin = false;
     protected ContainerInterface $container;
+    protected bool $isEmptyReturnArray=false;
 
     public function init()
     {
@@ -81,6 +82,9 @@ abstract class Controller extends \Yaf\Controller_Abstract
             'msg' => $message,
             'data' => $data?:new \stdClass()
         ];
+        if($this->isEmptyReturnArray && !$data){
+            $r_data['data'] = [];
+        }
         $json = json_encode($r_data);
         $resp =  $this->container->get(ResponseInterface::class)
             ->withBody(Utils::streamFor($json))
