@@ -124,7 +124,7 @@ class Medoo extends catfanMedoo
      * @param callable|null $callback
      * @return PDOStatement|null
      */
-    public function exec(string $statement, array $map = [], callable $callback = null): ?PDOStatement
+    public function exec(string $statement, array $map = [], ?callable $callback = null): ?PDOStatement
     {
         try {
             $res =  parent::exec($statement,$map,$callback);
@@ -153,7 +153,7 @@ class Medoo extends catfanMedoo
      * @param string|null $primaryKey
      * @return PDOStatement|null
      */
-    public function insertUpdate(string $table, array $values, string $primaryKey = null): ?PDOStatement
+    public function insertUpdate(string $table, array $values, ?string $primaryKey = null): ?PDOStatement
     {
         $this->beginDebug();
         $this->insert($table,$values,$primaryKey);

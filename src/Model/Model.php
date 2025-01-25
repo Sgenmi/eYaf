@@ -42,7 +42,7 @@ abstract class Model implements ModelInface
     /**
      * @var string
      */
-    public $table;
+    public string $table;
     // protected $check_rule = [
     // 'user_name' => [
     // 'required' => [true, "用户名不能为空"], //or 'required' => "用户名不能为空"
@@ -57,7 +57,7 @@ abstract class Model implements ModelInface
     /**
      * @var array
      */
-    protected $check_field;
+    protected array $check_field=[];
 
     /**
      * @var \PDOStatement;
@@ -765,7 +765,7 @@ abstract class Model implements ModelInface
      * @return bool
      * @throws Throwable
      */
-    public function create(array $columns, array $options = null):bool {
+    public function create(array $columns, ?array $options = null):bool {
         $medooInfo = $this->_getMedoo();
         try {
             $statement =$medooInfo['medoo']->create($this->table,$columns,$options);
@@ -1015,7 +1015,7 @@ abstract class Model implements ModelInface
      * @return bool
      * @throws Throwable
      */
-    public function insertUpdate(array $values, string $primaryKey = null):bool{
+    public function insertUpdate(array $values, ?string $primaryKey = null):bool{
         $medooInfo = $this->_getMedoo();
         try {
             $medooInfo['medoo']->insertUpdate($this->table,$values,$primaryKey);

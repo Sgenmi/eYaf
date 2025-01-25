@@ -134,7 +134,7 @@ class Tool
                     } elseif (is_array($val)) {
                         $val = (object)$val;
                     }
-                    return is_object($val) ? $val : new stdClass();
+                    return is_object($val) ? $val : new \stdClass();
                 }
             case 'array':
                 if (is_array($val)) {
