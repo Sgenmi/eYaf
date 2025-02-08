@@ -42,7 +42,7 @@ abstract class Model implements ModelInface
     /**
      * @var string
      */
-    public string $table;
+    public $table;
     // protected $check_rule = [
     // 'user_name' => [
     // 'required' => [true, "用户名不能为空"], //or 'required' => "用户名不能为空"
