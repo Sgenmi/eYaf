@@ -32,7 +32,7 @@ class Request extends ServerRequest implements RequestInterface
         return $this;
     }
 
-    public function getPost(string $name = null, mixed $default = null): mixed
+    public function getPost(?string $name = null, mixed $default = null): mixed
     {
         $val = $this->getParsedBody();
         if ($name === null) {
