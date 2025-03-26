@@ -14,7 +14,7 @@ use Sgenmi\eYaf\Contract\StdoutLoggerInterface;
 
 class Error extends \Web
 {
-    public function errorAction(\Throwable $exception=null){
+    public function errorAction(?\Throwable $exception=null){
             if(! $exception instanceof \Throwable){
                 return $this->Json(999999,'异常调用');
             }
