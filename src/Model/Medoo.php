@@ -10,6 +10,7 @@
 namespace Sgenmi\eYaf\Model;
 
 use Medoo\Medoo as catfanMedoo;
+use Medoo\Raw;
 use PDOStatement;
 
 class Medoo extends catfanMedoo
@@ -81,7 +82,7 @@ class Medoo extends catfanMedoo
             } elseif ($raw = $this->buildRaw($columnFn, $map)) {
                 $column = $raw;
             } else {
-                if (empty($columns) || $this->isRaw($columns)) {
+                if (empty($columns) || $columns instanceof Raw) {
                     $columns = '*';
                     $where = $join;
                 }
@@ -93,7 +94,7 @@ class Medoo extends catfanMedoo
         }
         //force index
         if(!empty($where['INDEX']) && $this->type=='mysql'){
-            if($this->isRaw($where['INDEX'])){
+            if($where['INDEX'] instanceof Raw){
                 $forceIndex= $this->buildRaw($where['INDEX'],$map);
             }else{
                 $forceIndex = $where['INDEX'];
